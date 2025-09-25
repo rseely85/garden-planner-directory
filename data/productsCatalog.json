@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "name": "Tomato Plants",
+    "category": "Vegetable",
+    "zone": "6a"
+  },
+  {
+    "id": "2",
+    "name": "Apple Trees",
+    "category": "Fruit",
+    "zone": "6a"
+  },
+  {
+    "id": "3",
+    "name": "Garden Soil",
+    "category": "Supplies",
+    "zone": "all"
+  }
+]
