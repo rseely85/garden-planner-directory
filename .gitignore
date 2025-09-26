@@ -67,3 +67,16 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Next.js build output
+.next/
+out/
+
+# Google Cloud SDK
+google-cloud-sdk/
+
+# tar.gz files
+*.tar.gz
+
+# Mac system files
+.DS_Store
