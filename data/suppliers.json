@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sup1",
+    "name": "Rochester Garden Center",
+    "slug": "rochester-garden-center",
+    "category": "garden-center",
+    "services": ["plants", "supplies", "delivery"],
+    "products": ["perennials", "annuals", "tomato-starts", "mulch", "topsoil"],
+    "address": { "street": "123 Garden St", "city": "Rochester", "county": "Monroe", "state": "NY", "zip": "14620" },
+    "geo": { "lat": 43.1566, "lng": -77.6088 },
+    "phone": "(585) 555-1234",
+    "website": "https://www.rochestergardencenter.com",
+    "premium": true,
+    "verified": true
+  },
+  {
+    "id": "sup2",
+    "name": "Buffalo Landscape Supply",
+    "slug": "buffalo-landscape-supply",
+    "category": "bulk-materials",
+    "services": ["soil", "mulch", "delivery"],
+    "products": ["mulch", "topsoil", "compost"],
+    "address": { "street": "456 Soil Ave", "city": "Buffalo", "county": "Erie", "state": "NY", "zip": "14201" },
+    "geo": { "lat": 42.8864, "lng": -78.8784 },
+    "phone": "(716) 555-5678",
+    "website": "https://www.buffalolandscapesupply.com",
+    "premium": false,
+    "verified": true
+  },
+  {
+    "id": "sup3",
+    "name": "Syracuse Greenhouse",
+    "slug": "syracuse-greenhouse",
+    "category": "greenhouse",
+    "services": ["plants", "trees", "delivery"],
+    "products": ["annuals", "perennials", "vegetables"],
+    "address": { "street": "789 Greenhouse Rd", "city": "Syracuse", "county": "Onondaga", "state": "NY", "zip": "13210" },
+    "geo": { "lat": 43.0481, "lng": -76.1474 },
+    "phone": "(315) 555-2468",
+    "website": "https://www.syracusegreenhouse.com",
+    "premium": true,
+    "verified": false
+  }
+]

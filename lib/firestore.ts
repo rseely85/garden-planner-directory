@@ -3,6 +3,13 @@
 
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { Supplier } from "./types";
+
+// Get all suppliers
+export async function getSuppliers(): Promise<Supplier[]> {
+  const snapshot = await getDocs(collection(db, "suppliers"));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Supplier));
+}
 
 // Get suppliers by optional filters
 export async function getSuppliersByFilters(city?: string, category?: string) {
