@@ -1,0 +1,11 @@
+{
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "us-east5",
+    "rules": "scripts/firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

@@ -8,8 +8,8 @@ set -e
 # ---------------------------
 # CONFIG - EDIT THESE
 # ---------------------------
-OWNER="your-github-username"            # e.g., rseely
-REPO="your-username/your-repo"          # e.g., rseely/garden-planner-directory
+OWNER="rseely85"            # e.g., rseely
+REPO="rseely85/garden-planner-directory"          # e.g., rseely/garden-planner-directory
 PROJECT_NAME="Garden Planner Directory MVP"
 PROJECT_DESC="Project board to manage the MVP build of the Garden Planner Directory website."
 # ---------------------------
