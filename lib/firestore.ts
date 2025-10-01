@@ -12,7 +12,15 @@ export async function getSuppliers(): Promise<Supplier[]> {
     if (supplierSnapshot.empty) {
       return localSuppliers;
     }
-    const suppliers: Supplier[] = supplierSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier));
+    const suppliers: Supplier[] = supplierSnapshot.docs.map(doc => {
+      const data: any = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+      } as Supplier;
+    });
     return suppliers;
   } catch (error) {
     return localSuppliers;
