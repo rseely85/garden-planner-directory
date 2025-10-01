@@ -1,35 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import SupplierCard from '../components/SupplierCard';
-import PlannerSidebarMatches from '../components/PlannerSidebarMatches';
-import { getSuppliers } from '../lib/firestore';
-import { Supplier } from '../lib/types';
+// pages/index.tsx
+import React, { useEffect, useState } from "react";
+import type { Supplier } from "../lib/types";
+import { getSuppliers } from "../lib/firestore";
 
 export default function HomePage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchSuppliers() {
+    (async () => {
       try {
-        const suppliers = await getSuppliers();
-        setSuppliers(suppliers);
-        console.log('Fetched suppliers:', suppliers);
-      } catch (error) {
-        console.error('Error fetching suppliers:', error);
+        const data = await getSuppliers();
+        setSuppliers(data);
+        console.log("Fetched suppliers:", data);
+      } catch (e: any) {
+        console.error(e);
+        setError(e?.message ?? "Failed to load suppliers");
       }
-    }
-    fetchSuppliers();
+    })();
   }, []);
 
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold">Garden Planner Directory</h1>
-      {suppliers.length > 0 ? (
-        suppliers.map((supplier) => (
-          <SupplierCard key={supplier.id} supplier={supplier} />
-        ))
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {suppliers === null ? (
+        <p>Loading suppliers…</p>
+      ) : suppliers.length ? (
+        <ul>
+          {suppliers.map((s) => (
+            <li key={s.id}>{s.name}</li>
+          ))}
+        </ul>
       ) : (
-        <p>Loading suppliers...</p>
+        <p>No suppliers found.</p>
       )}
+      <p className="mt-6 text-sm opacity-60">Baseline view (no Firestore yet)</p>
     </div>
   );
 }

@@ -1,50 +1,41 @@
 // lib/firestore.ts
-// Firestore helper functions for Garden Planner Directory
-
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 import { Supplier } from "./types";
 
-// Get all suppliers
+// Named export (NOT default) to avoid “getSuppliers is not a function”.
 export async function getSuppliers(): Promise<Supplier[]> {
-  const snapshot = await getDocs(collection(db, "suppliers"));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Supplier));
-}
-
-// Get suppliers by optional filters
-export async function getSuppliersByFilters(city?: string, category?: string) {
-  let q = collection(db, "suppliers");
-
-  // Apply filters dynamically
-  if (city && category) {
-    q = query(collection(db, "suppliers"), where("city", "==", city), where("services", "array-contains", category));
-  } else if (city) {
-    q = query(collection(db, "suppliers"), where("city", "==", city));
-  } else if (category) {
-    q = query(collection(db, "suppliers"), where("services", "array-contains", category));
-  }
-
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-}
-
-// Get single supplier by slug (id)
-export async function getSupplierBySlug(slug: string) {
-  const ref = doc(db, "suppliers", slug);
-  const snapshot = await getDoc(ref);
-  if (!snapshot.exists()) return null;
-  return { id: snapshot.id, ...snapshot.data() };
-}
-
-// Get products catalog
-export async function getProductsCatalog() {
-  const snapshot = await getDocs(collection(db, "productsCatalog"));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-}
-
-// Create review (requires auth)
-export async function createReview(supplierId: string, review: any) {
-  const ref = doc(collection(db, "suppliers", supplierId, "reviews"));
-  await setDoc(ref, review);
-  return { id: ref.id, ...review };
+  return [
+    {
+      id: "sup1",
+      name: "Rochester Garden Center",
+      slug: "rochester-garden-center",
+      category: "garden-center",
+      services: ["delivery"],
+      products: ["perennials"],
+      address: { city: "Rochester", state: "NY" },
+      premium: true,
+      verified: true,
+    },
+    {
+      id: "sup2",
+      name: "Buffalo Landscape Supply",
+      slug: "buffalo-landscape-supply",
+      category: "bulk-materials",
+      services: ["delivery"],
+      products: ["mulch", "topsoil"],
+      address: { city: "Buffalo", state: "NY" },
+      premium: false,
+      verified: true,
+    },
+    {
+      id: "sup3",
+      name: "Syracuse Greenhouse",
+      slug: "syracuse-greenhouse",
+      category: "greenhouse",
+      services: ["delivery"],
+      products: ["annuals"],
+      address: { city: "Syracuse", state: "NY" },
+      premium: true,
+      verified: false,
+    },
+  ];
 }
