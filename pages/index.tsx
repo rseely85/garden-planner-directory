@@ -35,7 +35,7 @@ export default function HomePage() {
       ) : (
         <p>No suppliers found.</p>
       )}
-      <p className="mt-6 text-sm opacity-60">Baseline view (no Firestore yet)</p>
+      <p className="mt-6 text-sm opacity-60">Development branch test ✅</p>
     </div>
   );
 }
