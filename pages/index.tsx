@@ -1,32 +1,13 @@
 // pages/index.tsx
-import React, { useEffect, useState } from "react";
+import React from "react";
 import type { Supplier } from "../lib/types";
 import { getSuppliers } from "../lib/firestore";
 
-export default function HomePage() {
-  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getSuppliers();
-        setSuppliers(data);
-        console.log("Fetched suppliers:", data);
-      } catch (e: any) {
-        console.error(e);
-        setError(e?.message ?? "Failed to load suppliers");
-      }
-    })();
-  }, []);
-
+export default function Home({ suppliers }: { suppliers: Supplier[] }) {
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold">Garden Planner Directory</h1>
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
-      {suppliers === null ? (
-        <p>Loading suppliers…</p>
-      ) : suppliers.length ? (
+      {suppliers.length ? (
         <ul>
           {suppliers.map((s) => (
             <li key={s.id}>{s.name}</li>
@@ -38,4 +19,13 @@ export default function HomePage() {
       <p className="mt-6 text-sm opacity-60">Development branch test ✅</p>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  const suppliers = await getSuppliers();
+  return {
+    props: {
+      suppliers,
+    },
+  };
 }
