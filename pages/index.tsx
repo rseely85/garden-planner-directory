@@ -8,6 +8,7 @@ import { getSuppliers } from "../lib/firestore";
 export default function Home({ suppliers }: { suppliers: Supplier[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [sortOption, setSortOption] = useState("");
 
   // Extract unique categories for dropdown
   const categories = useMemo(() => {
@@ -29,6 +30,30 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
     });
   }, [suppliers, searchQuery, selectedCategory]);
 
+  // Apply sorting logic
+  const sortedSuppliers = useMemo(() => {
+    const list = [...filteredSuppliers];
+    switch (sortOption) {
+      case "name-asc":
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc":
+        return list.sort((a, b) => b.name.localeCompare(a.name));
+      case "category":
+        return list.sort((a, b) => a.category.localeCompare(b.category));
+      case "premium":
+        return list.sort((a, b) => (b.premium ? 1 : 0) - (a.premium ? 1 : 0));
+      default:
+        return list;
+    }
+  }, [filteredSuppliers, sortOption]);
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("");
+    setSortOption("");
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">Garden Planner Directory</h1>
@@ -38,12 +63,14 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
         categories={categories}
         onSearchChange={setSearchQuery}
         onCategoryChange={setSelectedCategory}
+        onSortChange={setSortOption}
+        onResetFilters={handleResetFilters}
       />
 
       {/* Supplier Grid */}
-      {filteredSuppliers.length ? (
+      {sortedSuppliers.length ? (
         <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          {filteredSuppliers.map((supplier) => (
+          {sortedSuppliers.map((supplier) => (
             <SupplierCard key={supplier.id} supplier={supplier} />
           ))}
         </div>
