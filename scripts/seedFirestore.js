@@ -23,17 +23,23 @@ async function seed() {
     const suppliers = loadJSON("suppliers.json");
     const products = loadJSON("productsCatalog.json");
 
+    // Helper to create a slug from supplier name
+    function makeSlug(name) {
+      return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    }
+
     // Seed suppliers
     for (const supplier of suppliers) {
-      const ref = db.collection("suppliers").doc(supplier.id);
+      const slug = supplier.slug || makeSlug(supplier.name);
+      const ref = db.collection("suppliers").doc(slug);
       const doc = await ref.get();
 
       if (doc.exists) {
-        await ref.set({ ...supplier, updatedAt: new Date() }, { merge: true });
-        console.log(`🔄 Updated supplier: ${supplier.id}`);
+        await ref.set({ ...supplier, slug, updatedAt: new Date() }, { merge: true });
+        console.log(`🔄 Updated supplier: ${slug}`);
       } else {
-        await ref.set({ ...supplier, createdAt: new Date(), updatedAt: new Date() });
-        console.log(`✨ Created new supplier: ${supplier.id}`);
+        await ref.set({ ...supplier, slug, createdAt: new Date(), updatedAt: new Date() });
+        console.log(`✨ Created new supplier: ${slug}`);
       }
     }
 

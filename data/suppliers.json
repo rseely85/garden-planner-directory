@@ -6,7 +6,13 @@
     "category": "garden-center",
     "services": ["plants", "supplies", "delivery"],
     "products": ["perennials", "annuals", "tomato-starts", "mulch", "topsoil"],
-    "address": { "street": "123 Garden St", "city": "Rochester", "county": "Monroe", "state": "NY", "zip": "14620" },
+    "address": {
+      "street": "123 Garden St",
+      "city": "Rochester",
+      "county": "Monroe",
+      "state": "NY",
+      "zip": "14620"
+    },
     "geo": { "lat": 43.1566, "lng": -77.6088 },
     "phone": "(585) 555-1234",
     "website": "https://www.rochestergardencenter.com",
@@ -20,7 +26,13 @@
     "category": "bulk-materials",
     "services": ["soil", "mulch", "delivery"],
     "products": ["mulch", "topsoil", "compost"],
-    "address": { "street": "456 Soil Ave", "city": "Buffalo", "county": "Erie", "state": "NY", "zip": "14201" },
+    "address": {
+      "street": "456 Soil Ave",
+      "city": "Buffalo",
+      "county": "Erie",
+      "state": "NY",
+      "zip": "14201"
+    },
     "geo": { "lat": 42.8864, "lng": -78.8784 },
     "phone": "(716) 555-5678",
     "website": "https://www.buffalolandscapesupply.com",
@@ -34,11 +46,77 @@
     "category": "greenhouse",
     "services": ["plants", "trees", "delivery"],
     "products": ["annuals", "perennials", "vegetables"],
-    "address": { "street": "789 Greenhouse Rd", "city": "Syracuse", "county": "Onondaga", "state": "NY", "zip": "13210" },
+    "address": {
+      "street": "789 Greenhouse Rd",
+      "city": "Syracuse",
+      "county": "Onondaga",
+      "state": "NY",
+      "zip": "13210"
+    },
     "geo": { "lat": 43.0481, "lng": -76.1474 },
     "phone": "(315) 555-2468",
     "website": "https://www.syracusegreenhouse.com",
     "premium": true,
     "verified": false
+  },
+  {
+    "id": "sup4",
+    "name": "Farm Fresh Tools",
+    "slug": "farm-fresh-tools",
+    "category": "tools-supplies",
+    "services": ["hand tools", "hardware", "shipping"],
+    "products": ["shovels", "rakes", "gloves", "soil-test-kits"],
+    "address": {
+      "street": "100 Country Ln",
+      "city": "Canandaigua",
+      "county": "Ontario",
+      "state": "NY",
+      "zip": "14424"
+    },
+    "geo": { "lat": 42.8875, "lng": -77.2817 },
+    "phone": "(585) 555-7890",
+    "website": "https://www.farmfreshtools.com",
+    "premium": false,
+    "verified": true
+  },
+  {
+    "id": "sup5",
+    "name": "Green Thumb Seeds",
+    "slug": "green-thumb-seeds",
+    "category": "seeds-supplier",
+    "services": ["mail-order", "delivery"],
+    "products": ["vegetable seeds", "herb seeds", "flower seeds"],
+    "address": {
+      "street": "77 Seedway Dr",
+      "city": "Geneva",
+      "county": "Ontario",
+      "state": "NY",
+      "zip": "14456"
+    },
+    "geo": { "lat": 42.867, "lng": -76.985 },
+    "phone": "(585) 555-1122",
+    "website": "https://www.greenthumbseeds.com",
+    "premium": false,
+    "verified": false
+  },
+  {
+    "id": "sup6",
+    "name": "Garden World Supplies",
+    "slug": "garden-world-supplies",
+    "category": "garden-center",
+    "services": ["plants", "tools", "delivery"],
+    "products": ["annuals", "shrubs", "mulch", "fertilizer"],
+    "address": {
+      "street": "42 Maple Ave",
+      "city": "Batavia",
+      "county": "Genesee",
+      "state": "NY",
+      "zip": "14020"
+    },
+    "geo": { "lat": 42.998, "lng": -78.187 },
+    "phone": "(585) 555-4455",
+    "website": "https://www.gardenworldsupplies.com",
+    "premium": true,
+    "verified": true
   }
 ]

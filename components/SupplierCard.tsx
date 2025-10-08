@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Supplier } from "../lib/types";
 
 export default function SupplierCard({ supplier }: { supplier: Supplier }) {
@@ -17,20 +18,24 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
       }`}
     >
       {/* Logo / Placeholder */}
-      <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
-        <img
-          src={logoUrl}
-          alt={supplier.name || "Supplier"}
-          className="object-cover h-full w-full"
-        />
-      </div>
+      <Link href={`/supplier/${supplier.slug}`}>
+        <div className="h-40 w-full bg-gray-100 flex items-center justify-center cursor-pointer">
+          <img
+            src={logoUrl}
+            alt={supplier.name || "Supplier"}
+            className="object-cover h-full w-full"
+          />
+        </div>
+      </Link>
 
       {/* Content */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-bold text-gray-900">
-            {supplier.name || "Unnamed Supplier"}
-          </h2>
+          <Link href={`/supplier/${supplier.slug}`}>
+            <h2 className="text-lg font-bold text-gray-900 hover:text-blue-600 cursor-pointer">
+              {supplier.name || "Unnamed Supplier"}
+            </h2>
+          </Link>
           <div className="flex gap-2 text-sm">
             {premium && (
               <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">
@@ -49,13 +54,13 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
           <strong>Category:</strong> {supplier.category || "N/A"}
         </p>
 
-        {supplier.services && supplier.services.length > 0 && (
+        {supplier.services?.length > 0 && (
           <p className="text-gray-600 text-sm">
             <strong>Services:</strong> {supplier.services.join(", ")}
           </p>
         )}
 
-        {supplier.products && supplier.products.length > 0 && (
+        {supplier.products?.length > 0 && (
           <p className="text-gray-600 text-sm">
             <strong>Products:</strong> {supplier.products.join(", ")}
           </p>
