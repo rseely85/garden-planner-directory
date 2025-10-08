@@ -1,55 +1,89 @@
-import React from 'react';
-import { Supplier } from '../lib/types';
+import React from "react";
+import { Supplier } from "../lib/types";
 
 export default function SupplierCard({ supplier }: { supplier: Supplier }) {
+  const logoUrl =
+    (supplier as any)?.logo ||
+    "https://placehold.co/300x200?text=No+Image";
+
+  const website = supplier?.website || "Website N/A";
+  const verified = supplier?.verified;
+  const premium = supplier?.premium;
+
   return (
-    <div className="p-4 rounded-lg shadow-sm bg-white mb-4">
-      <h2 className="text-xl font-semibold flex items-center gap-2">
-        <span>{supplier.name}</span>
-        {supplier.premium && (
-          <span className="text-yellow-600 font-medium flex items-center gap-1">
-            ✅ Premium
-          </span>
-        )}
-        {supplier.verified && (
-          <span className="text-green-600 font-medium flex items-center gap-1">
-            ✅ Verified
-          </span>
-        )}
-      </h2>
-      <p className="text-gray-500 text-sm">{supplier.category}</p>
-      {supplier.website && (
-        <p className="mt-2">
-          <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm block">
-            {supplier.website}
-          </a>
-        </p>
-      )}
-      {supplier.services.length > 0 && (
-        <div className="mt-3">
-          <h3 className="font-semibold text-sm mb-1">Services:</h3>
-          <ul className="list-disc list-inside text-sm text-gray-700">
-            {supplier.services.map((service, index) => (
-              <li key={index}>{service}</li>
-            ))}
-          </ul>
+    <div
+      className={`border rounded-xl shadow-sm bg-white overflow-hidden transition hover:shadow-md hover:-translate-y-0.5 duration-200 ${
+        premium ? "border-yellow-400" : "border-gray-200"
+      }`}
+    >
+      {/* Logo / Placeholder */}
+      <div className="h-40 w-full bg-gray-100 flex items-center justify-center">
+        <img
+          src={logoUrl}
+          alt={supplier.name || "Supplier"}
+          className="object-cover h-full w-full"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold text-gray-900">
+            {supplier.name || "Unnamed Supplier"}
+          </h2>
+          <div className="flex gap-2 text-sm">
+            {premium && (
+              <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">
+                ⭐ Premium
+              </span>
+            )}
+            {verified && (
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                ✅ Verified
+              </span>
+            )}
+          </div>
         </div>
-      )}
-      {supplier.products && supplier.products.length > 0 && (
-        <div className="mt-3">
-          <h3 className="font-semibold text-sm mb-1">Products:</h3>
-          <ul className="list-disc list-inside text-sm text-gray-700">
-            {supplier.products.map((product, index) => (
-              <li key={index}>{product}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {(supplier.city || supplier.state) && (
-        <p className="text-gray-600 text-sm mt-2">
-          Location: {[supplier.city, supplier.state].filter(Boolean).join(', ')}
+
+        <p className="text-gray-700 text-sm">
+          <strong>Category:</strong> {supplier.category || "N/A"}
         </p>
-      )}
+
+        {supplier.services && supplier.services.length > 0 && (
+          <p className="text-gray-600 text-sm">
+            <strong>Services:</strong> {supplier.services.join(", ")}
+          </p>
+        )}
+
+        {supplier.products && supplier.products.length > 0 && (
+          <p className="text-gray-600 text-sm">
+            <strong>Products:</strong> {supplier.products.join(", ")}
+          </p>
+        )}
+
+        <p className="text-gray-600 text-sm mt-1">
+          <strong>Location:</strong>{" "}
+          {supplier.city && supplier.state
+            ? `${supplier.city}, ${supplier.state}`
+            : "N/A"}
+        </p>
+
+        <p className="text-gray-600 text-sm mt-1">
+          <strong>Website:</strong>{" "}
+          {website !== "Website N/A" ? (
+            <a
+              href={website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {website}
+            </a>
+          ) : (
+            website
+          )}
+        </p>
+      </div>
     </div>
   );
 }
