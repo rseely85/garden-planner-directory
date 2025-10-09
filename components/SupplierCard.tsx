@@ -68,8 +68,8 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
 
         <p className="text-gray-600 text-sm mt-1">
           <strong>Location:</strong>{" "}
-          {supplier.city && supplier.state
-            ? `${supplier.city}, ${supplier.state}`
+          {supplier.address?.city && supplier.address?.state
+            ? `${supplier.address.city}, ${supplier.address.state}`
             : "N/A"}
         </p>
 

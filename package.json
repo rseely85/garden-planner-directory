@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "reauth": "gcloud auth application-default login",
+    "verify": "node scripts/verifyFirestoreData.js",
+    "reauth:full": "gcloud auth application-default login && node scripts/verifyFirestoreData.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
@@ -22,7 +25,10 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@swc/core": "^1.13.5",
     "@types/react": "19.1.13",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.0.0"
   }
 }

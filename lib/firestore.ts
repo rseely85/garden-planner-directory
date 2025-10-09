@@ -1,60 +1,55 @@
-// lib/firestore.ts
-import { Supplier } from "./types";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig";
-import localSuppliers from "../data/suppliers.json";
+import admin from "firebase-admin";
+import type { Category, Supplier } from "./types";
 
-// Named export (NOT default) to avoid “getSuppliers is not a function”.
+// Initialize Firestore using ADC credentials
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: "garden-planner-directory",
+  });
+}
+const db = admin.firestore();
+
 export async function getSuppliers(): Promise<Supplier[]> {
   try {
-    const suppliersCol = collection(db, "suppliers");
-    const supplierSnapshot = await getDocs(suppliersCol);
-    if (supplierSnapshot.empty) {
-      return localSuppliers;
+    const snapshot = await db.collection("suppliers").get();
+    if (snapshot.empty) {
+      console.warn("⚠️ No suppliers found in Firestore.");
+      return [];
     }
-    const suppliers: Supplier[] = supplierSnapshot.docs.map(doc => {
-      const data: any = doc.data();
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      const jsonSafeData = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => {
+          if (value instanceof admin.firestore.Timestamp) {
+            return [key, value.toDate().toISOString()];
+          }
+          return [key, value];
+        })
+      );
       return {
         id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-      } as Supplier;
-    });
-    return suppliers;
+        ...jsonSafeData,
+      };
+    }) as Supplier[];
   } catch (error) {
-    return localSuppliers;
+    console.error("❌ Firestore error fetching suppliers:", error);
+    return [];
   }
 }
 
-export async function getSupplierBySlug(slug: string): Promise<Supplier | null> {
-  try {
-    // Attempt to load from Firestore
-    const suppliersCol = collection(db, "suppliers");
-    const snapshot = await getDocs(suppliersCol);
-    const suppliers = snapshot.docs.map(doc => doc.data() as Supplier);
-    const supplier = suppliers.find(s => s.slug === slug);
-    if (supplier) {
-      console.log("✅ Found supplier in Firestore:", supplier.slug);
-      return supplier;
-    } else {
-      console.warn("⚠️ Supplier not found in Firestore, falling back to local data.");
-    }
-  } catch (error) {
-    console.warn("⚠️ Firestore unavailable, using local fallback:", error);
-  }
 
-  // Always try local fallback if Firestore fails or supplier not found
-  try {
-    const supplier = localSuppliers.find(s => s.slug === slug);
-    if (supplier) {
-      console.log("✅ Loaded supplier from local JSON:", supplier.slug);
-      return supplier;
-    }
-    console.warn("❌ Supplier not found in local JSON either:", slug);
-    return null;
-  } catch (localError) {
-    console.error("🔥 Local fallback failed:", localError);
-    return null;
-  }
+export async function getSuppliersByFilters(city?: string, category?: Category) {
+  const suppliers = await getSuppliers();
+  return suppliers.filter(supplier => {
+    const matchesCity = city ? supplier.address?.city?.toLowerCase() === city.toLowerCase() : true;
+    const matchesCategory = category ? supplier.category === category : true;
+    return matchesCity && matchesCategory;
+  });
+}
+
+export async function getSupplierBySlug(slug: string): Promise<Supplier | null> {
+  const suppliers = await getSuppliers();
+  const supplier = suppliers.find(s => s.slug === slug);
+  return supplier || null;
 }

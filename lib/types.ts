@@ -12,9 +12,22 @@ export interface Supplier {
   name: string;
   slug: string;
   category: Category;
+
+  // Optional info
+  website?: string;
+  logo?: string;
+  location?: string; // Firestore may store city/state separately later
+  description?: string;
+  image?: string;
+
+  // Arrays
   services: string[];
   products: string[];
-  address: { city: string; state: string };
+
+  // Address object (kept from previous version)
+  address?: { city: string; state: string };
+
+  // Flags
   premium?: boolean;
   verified?: boolean;
 }
