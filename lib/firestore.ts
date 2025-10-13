@@ -1,44 +1,56 @@
-import admin from "firebase-admin";
-import type { Category, Supplier } from "./types";
+import type { Supplier, Category } from "./types";
 
-// Initialize Firestore using ADC credentials
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: "garden-planner-directory",
-  });
+// ✅ SERVER: use firebase-admin only when not running in browser
+let serverDb: FirebaseFirestore.Firestore | null = null;
+if (typeof window === "undefined") {
+  const { adminDb } = require("./firebaseAdmin");
+  serverDb = adminDb;
 }
-const db = admin.firestore();
 
+// ✅ CLIENT: use Firebase Web SDK
+import { db as clientDb } from "./firebaseClient";
+import { collection, getDocs } from "firebase/firestore";
+
+/**
+ * Fetch all suppliers from Firestore.
+ * Automatically detects whether running server-side or client-side.
+ */
 export async function getSuppliers(): Promise<Supplier[]> {
   try {
-    const snapshot = await db.collection("suppliers").get();
-    if (snapshot.empty) {
-      console.warn("⚠️ No suppliers found in Firestore.");
-      return [];
+    if (typeof window === "undefined" && serverDb) {
+      // --- SERVER-SIDE FETCH ---
+      const snapshot = await serverDb.collection("suppliers").get();
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+        };
+      }) as Supplier[];
+    } else {
+      // --- CLIENT-SIDE FETCH ---
+      const snapshot = await getDocs(collection(clientDb, "suppliers"));
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+        };
+      }) as Supplier[];
     }
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      const jsonSafeData = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => {
-          if (value instanceof admin.firestore.Timestamp) {
-            return [key, value.toDate().toISOString()];
-          }
-          return [key, value];
-        })
-      );
-      return {
-        id: doc.id,
-        ...jsonSafeData,
-      };
-    }) as Supplier[];
   } catch (error) {
     console.error("❌ Firestore error fetching suppliers:", error);
     return [];
   }
 }
 
-
+/**
+ * Filter suppliers by city and category.
+ */
 export async function getSuppliersByFilters(city?: string, category?: Category) {
   const suppliers = await getSuppliers();
   return suppliers.filter(supplier => {
@@ -48,8 +60,10 @@ export async function getSuppliersByFilters(city?: string, category?: Category) 
   });
 }
 
+/**
+ * Fetch a single supplier by slug.
+ */
 export async function getSupplierBySlug(slug: string): Promise<Supplier | null> {
   const suppliers = await getSuppliers();
-  const supplier = suppliers.find(s => s.slug === slug);
-  return supplier || null;
+  return suppliers.find(s => s.slug === slug) || null;
 }

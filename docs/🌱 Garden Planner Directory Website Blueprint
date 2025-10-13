@@ -1,0 +1,581 @@
+🌱 Garden Planner Directory Website Blueprint
+
+1. 🎯 Core Purpose
+
+A directory + planning hub where homeowners, DIY gardeners, landscapers, and small farms can:
+•	Find local suppliers & services (nurseries, landscape companies, bulk mulch/topsoil, compost, tree removal, etc.).
+•	Connect garden design planning tools (your Garden Planner) with real suppliers → e.g., a user designs a garden row with perennials, the site suggests nearby nurseries that carry them.
+•	Build trust and visibility via reviews, certifications, and user-generated gardens.
+ 
+2. 🗂 Site Structure
+
+Main Categories (Top Menu)
+1.	Garden Centers & Nurseries
+2.	Landscaping Services
+3.	Bulk Materials (mulch, soil, stone, compost)
+4.	Tree & Shrub Services (tree removal, pruning, arborists)
+5.	Greenhouses & Specialty Growers
+6.	Native Plants & Sustainable Suppliers
+7.	Garden Design Inspiration (connects directly to Garden Planner)
+
+Subcategories (Filters & Directory Listings)
+•	By Location: Buffalo, Rochester, Syracuse, Finger Lakes, Southern Tier, Lake Ontario Coast.
+•	By Service Type: design, install, delivery, seasonal cleanup, irrigation, fencing, etc.
+•	By Plant/Material Type: perennials, annuals, fruit trees, shrubs, compost, hardscape stone.
+•	By Certifications: ecological, native plants, organic, licensed arborist, etc.
+ 
+3. 💰 Monetization Model
+1.	Freemium Listings
+o	Basic listing: name, address, phone, website. Free.
+o	Premium: photos, featured placement, logo, direct planner integration. $25–50/mo.
+2.	Advertising Blocks
+o	Contextual ads tied to categories (e.g., topsoil supplier ad shows up on “Soil” pages).
+3.	Affiliate/Referral Links
+o	Partner with seed/tool suppliers (Amazon, Johnny’s Seeds, Gardener’s Supply) → earn % from purchases.
+4.	Planner Integration Add-Ons
+o	Businesses can pay to have their products appear in your Garden Planner’s “Suggested Sources”.
+5.	Seasonal Sponsorships
+o	“Spring Planting Spotlight” for local garden centers.
+o	“Fall Mulch Madness” promo for bulk suppliers.
+ 
+4. ⚙️ Key Features
+•	Search & Filter Directory: by ZIP code, category, plant type, service.
+•	Map Integration: Google Maps pins for all listings.
+•	Planner Tie-In: Users select a crop/row in the planner → sidebar shows suppliers nearby who carry it.
+•	Reviews & Ratings: Verified buyers leave feedback.
+•	Seasonal Content Hub: Articles/videos on planting in Zone 6, how-tos, etc.
+•	User Showcase: Allow gardeners to upload photos of gardens designed with your planner, tagged with suppliers they used.
+ 
+5. 📈 SEO & Keyword Anchors
+
+Build landing pages around high-intent local searches (from our earlier keyword brainstorm):
+•	“Garden Centers in Rochester NY”
+•	“Bulk Mulch Delivery Buffalo NY”
+•	“Native Plant Nurseries Western NY”
+•	“Landscaping Services Syracuse NY”
+•	“Tree Removal Rochester NY”
+•	“Greenhouses in Western NY”
+
+Each landing page = directory listings + integrated planner demo + content (guides, tips, photos).
+ 
+6. 🚀 Launch Plan (90-Day Roadmap)
+
+Phase 1 — MVP (Month 1–2)
+•	Build basic directory framework (categories + filters).
+•	Seed with 20–30 listings (pull from public info: top nurseries, landscapers, suppliers in WNY).
+•	Integrate a lightweight version of Garden Planner (demo rows + call-to-action to try full planner).
+
+Phase 2 — Growth (Month 3–4)
+•	Add premium listing option (Stripe or PayPal).
+•	Launch 3–5 SEO landing pages (optimized for local high-volume keywords).
+•	Start email capture: “Download Free Planting Guide for WNY Gardeners.”
+
+Phase 3 — Monetization (Month 5–6)
+•	Approach local nurseries/landscapers → offer premium placement.
+•	Add affiliate blocks for seeds/tools.
+•	Roll out seasonal content hub.
+ 
+7. 📌 First 10 Pages to Build
+1.	Home — Clear pitch: “Plan, Source, and Grow Your Garden in Western NY.”
+2.	Garden Centers in Rochester NY (directory + content)
+3.	Garden Centers in Buffalo NY
+4.	Garden Centers in Syracuse NY
+5.	Bulk Mulch Delivery Buffalo NY
+6.	Topsoil & Compost Rochester NY
+7.	Native Plant Nurseries Western NY
+8.	Landscaping Companies Rochester NY
+9.	Tree Removal Services Buffalo NY
+10.	Greenhouses in Western NY
+ 
+✅ This gives you a site that is useful on day one and scales naturally: start with Western NY, then expand to “Garden Centers in Cleveland OH,” “Landscaping in Pittsburgh PA,” etc.
+Perfect — let’s design wireframes that show not just a directory site, but how your Garden Planner functionality can be the glue that holds it all together. I’ll describe the page flows in detail so you or a designer/dev can sketch or prototype them.
+ 
+🌱 Wireframe 1 — 
+Home Page
+
+Top Navigation Bar
+•	Logo + Tagline: “Sunset Oaks Garden Planner — Plan • Source • Grow”
+•	Menu Items: Home | Garden Planner | Directory | Inspiration | Blog | About
+ 
+Hero Section (Above the Fold)
+•	Headline: “Design your garden — and find everything you need locally.”
+•	Subtext: Plan your space, discover suppliers, and connect with services across Western NY.
+•	Buttons:
+o	[🖌 Start Planning] (launches planner demo)
+o	[📍 Browse Local Suppliers] (jumps to directory search)
+
+Visual: Screenshot/animation of the Garden Planner grid, with icons of plants appearing, then arrows pointing to “Supplier Matches.”
+ 
+How It Works (3-Step Flow)
+1.	Plan Your Garden → Use our interactive planner tool.
+2.	Find Local Suppliers → See where to get plants, soil, mulch, and services near you.
+3.	Grow with Confidence → Use reviews, tips, and verified listings to guide your choices.
+
+Icons + short explanations.
+ 
+Featured Categories (Directory Entry Points)
+
+Grid of cards:
+•	Garden Centers
+•	Landscaping Services
+•	Mulch & Soil Delivery
+•	Native Plant Nurseries
+•	Tree & Shrub Services
+•	Greenhouses
+
+Each card → link to that directory page.
+ 
+Planner Teaser Section
+•	Small interactive embed (demo mode):
+o	User clicks to add “Tomato Row” → Sidebar suggests “3 Local Suppliers carry these plants.”
+o	Button: [Try Full Garden Planner]
+ 
+Seasonal Content Hub
+•	Example blog posts:
+o	“Best Perennials for Rochester Shade Gardens”
+o	“Where to Buy Bulk Mulch in Buffalo”
+•	Keeps SEO strong + adds value.
+ 
+Footer
+•	Quick links, newsletter sign-up (“Get Planting Guides for Zone 6”)
+•	Social links (YouTube channels + Facebook Garden Community)
+ 
+🌱 Wireframe 2 — 
+Directory Category Page
+
+(Example: Garden Centers in Rochester NY)
+ 
+Top Section
+•	H1 Title: “Garden Centers in Rochester, NY”
+•	Subtext: “Plan your garden and source supplies from trusted local nurseries.”
+•	Search + Filter Bar:
+o	Location filter (zip, town)
+o	Plant types (annuals, perennials, trees, shrubs)
+o	Services offered (delivery, design, installation)
+ 
+Main Directory Listings
+•	Listing Card (repeatable):
+o	Business Name
+o	Address + Map Pin
+o	Phone / Website
+o	“⭐️ 4.6 (23 Reviews)”
+o	Services offered icons (Delivery 🚚, Organic 🌱, Native Plants 🌾)
+o	Button: [View Profile]
+
+Premium listings float to top with logo & photos.
+ 
+Planner Integration Sidebar (Dynamic)
+
+When user has an active Garden Planner design:
+•	Example: User added 3 rows of perennials + 1 row of tomatoes in planner.
+•	Sidebar shows:
+o	🌸 Perennials → Available at “Sollecito Nursery,” “Van Putte Gardens”
+o	🍅 Tomato Starts → Available at “Chili Garden Center”
+o	🌱 Compost/Soil → Available at “Rochester Topsoil & Mulch”
+
+If no active planner session:
+•	Show prompt: “Want to see which centers carry your plants? [Open Garden Planner]”
+ 
+Content Section (SEO/Local Value)
+
+Below listings, a short guide/article:
+•	“Tips for Choosing the Best Garden Center in Rochester”
+•	“What Plants Grow Best in Zone 6 (Western NY)”
+•	Internal links → Blog posts.
+ 
+Call-to-Action Footer
+•	“Ready to Plan Your Garden?”
+•	[Open Garden Planner]
+ 
+🔗 Integration Flow Between Planner & Directory
+•	Planner sends user’s current plant list to directory.
+•	Directory sidebar dynamically filters suppliers that match those plants/materials.
+•	Clicking supplier → “Add to Planner” option (e.g., mark where they’ll source that plant).
+•	Future phase: suppliers can pay to have inventory integrated, so planner shows “available now at [Garden Center].”
+ 
+🚀 Why This Works
+•	User-first flow: People don’t just browse businesses; they plan their garden and see supplier matches.
+•	Business value: Local suppliers get direct visibility inside the planner experience.
+•	SEO value: Landing pages for each city + category rank for local searches.
+Scalability: Start WNY → clone to other regions.
+Goal:
+Build a directory website integrated with the Garden Planner tool. Users can plan gardens, then discover local suppliers/services that match their plant/material needs.
+ 
+1. Tech Stack
+•	Frontend: React (Next.js if SSR needed)
+•	Backend: Node.js / Express OR Firebase for MVP
+•	Database: Firebase/Firestore (scales easily) or PostgreSQL
+•	Hosting: Netlify/Vercel (planner already Netlify)
+•	Maps: Google Maps API (business pins)
+ 
+2. Core Features
+
+Home Page
+•	Hero banner with CTA: Start Planning / Browse Directory
+•	3-step “How it Works” section
+•	Featured Categories (grid, link to directory categories)
+•	Mini embedded Garden Planner (demo mode, small grid)
+•	Seasonal Content Hub (blog cards)
+•	Footer with newsletter + social
+
+Directory Page (per category)
+•	H1 title with city/category (SEO-friendly)
+•	Filter bar (location, plant type, service type)
+•	Listings (name, address, phone, map pin, rating, icons for services, profile link)
+•	Planner Sidebar: shows suppliers that match current planner crops/materials
+•	SEO content block under listings
+•	CTA footer: Open Garden Planner
+
+Listing Profile Page
+•	Business logo, photos, description
+•	Services offered (icons)
+•	Map embed
+•	Reviews (basic ratings + comments)
+•	Planner integration: “Mark this as supplier for [Tomatoes/Soil/etc.]”
+
+Garden Planner Integration
+•	Planner data → stored in local state or Firebase
+•	Directory Sidebar queries DB: match plant types/materials → suppliers tagged in DB
+•	Future phase: API/CSV import for suppliers to upload inventories
+ 
+3. Data Model (MVP)
+
+Suppliers Collection
+{
+  id,
+  name,
+  category,   // garden-center, landscaping, mulch, etc.
+  services: [delivery, design, install],
+  products: [perennials, tomatoes, compost],
+  location: { city, county, lat, lng },
+  contact: { phone, website, email },
+  premium: true/false,
+  reviews: [{user, rating, text}]
+}
+Planner → Supplier Mapping
+•	Planner stores selected plants/materials.
+•	Directory filters suppliers where products[] intersects with planner items.
+ 
+4. Monetization
+•	Free listing vs. premium (featured, photos, higher rank)
+•	Ad slots (per category page)
+•	Affiliate links (seeds, tools)
+ 
+5. SEO
+•	Auto-generate landing pages for:
+o	Garden Centers + [City]
+o	Landscaping Services + [City]
+o	Bulk Mulch Delivery + [City]
+•	Structured data markup for LocalBusiness
+ 
+6. Roadmap (MVP → Expansion)
+•	Phase 1 (MVP): Directory pages + planner sidebar integration
+•	Phase 2: Premium listings + payments
+•	Phase 3: Supplier inventory integration (CSV upload / API)
+•	Phase 4: Expand geography beyond Western NY
+1) Minimal Visual Wireframes (ASCII)
+
+Home
+ -----------------------------------------------------------
+| LOGO | Home | Planner | Directory | Inspiration | Blog    |
+ -----------------------------------------------------------
+| HERO: "Design your garden & find everything local."       |
+| [Start Planning]  [Browse Directory]                      |
+ -----------------------------------------------------------
+| HOW IT WORKS  [Plan]  [Source]  [Grow]                    |
+ -----------------------------------------------------------
+| FEATURED CATEGORIES:                                      |
+| [Garden Centers] [Landscaping] [Mulch/Soil] [Native] ...  |
+ -----------------------------------------------------------
+| PLANNER TEASER (mini embed):                              |
+| [Grid demo]  ->  "Tomatoes added" -> "3 local suppliers"  |
+| [Open Full Planner]                                       |
+ -----------------------------------------------------------
+| SEASONAL CONTENT (3 cards)                                |
+ -----------------------------------------------------------
+| FOOTER: Newsletter | Social | Legal                       |
+ -----------------------------------------------------------
+Directory Category (e.g., Garden Centers in Rochester)
+ -----------------------------------------------------------
+| LOGO + NAV                                               |
+ -----------------------------------------------------------
+| H1: Garden Centers in Rochester, NY                      |
+| Filters: [Location] [Plant Type] [Services] [Open Now]   |
+ -----------------------------------------------------------
+| LEFT (Listings)            | RIGHT (Planner Sidebar)     |
+| [Card] Name, rating, map   | "Your Plan"                 |
+|  Services icons            | Perennials -> Sollecito     |
+|  [View Profile] [Call]     | Tomatoes -> Van Putte       |
+| [Card] ...                 | Compost -> Topsoil & Mulch  |
+| ...                        | [Open Full Planner]         |
+ -----------------------------------------------------------
+| SEO Content: Tips / FAQs                                  |
+ -----------------------------------------------------------
+| CTA: [Open Garden Planner]                               |
+ -----------------------------------------------------------
+Business Profile
+ -----------------------------------------------------------
+| Name + ⭐4.7 (32)  [Claim/Upgrade]                        |
+| Hero image / gallery                                      |
+| Address | Phone | Website | Map                           |
+| Services: Delivery | Design | Install | Native Plants     |
+| Products: Perennials | Shrubs | Compost                   |
+| [Mark as Supplier for: Tomatoes/Perennials/Compost]       |
+| Reviews (list)                                            |
+ -----------------------------------------------------------
+ 
+2) Tech Choice (MVP)
+•	Frontend: React + Vite or Next.js (choose Next.js if you want SSR/SEO out of the box)
+•	State: React Query (server data) + local Zustand/Context (planner state mirror)
+•	Backend (MVP): Firebase (Auth + Firestore + Storage)
+(Can be swapped for Node/Express + Postgres later)
+•	Maps: Google Maps JavaScript API / Places API
+•	Payments (Premium listings): Stripe
+ 
+3) Data Model (Firestore)
+
+Collections
+
+suppliers
+ (directory listings)
+{
+  id: string,                // doc id
+  name: string,
+  slug: string,              // "sollecito-landscaping-nursery"
+  category: "garden-center" | "landscaping" | "bulk-materials" | "tree-service" | "greenhouse" | "native-nursery",
+  services: string[],        // ["delivery","design","install","arborist"]
+  products: string[],        // taxonomy IDs (see products catalog below)
+  address: {
+    street: string, city: string, county: string, state: "NY", zip: string
+  },
+  geo: { lat: number, lng: number },
+  phone: string,
+  website: string,
+  email?: string,
+  hours?: { mon..sun: { open: string, close: string } },
+  ratingAvg?: number,
+  ratingCount?: number,
+  premium: boolean,
+  photos?: string[],         // storage URLs
+  verified?: boolean,
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+reviews
+{
+  id: string,
+  supplierId: string,        // ref to suppliers
+  userId: string,
+  rating: number,            // 1..5
+  text: string,
+  createdAt: Timestamp,
+  status: "published" | "pending" | "rejected"
+}
+cities
+ 
+(for landing pages & filters)
+{
+  id: "rochester-ny",
+  name: "Rochester",
+  state: "NY",
+  counties: ["Monroe"],
+  geoBounds?: GeoJSON,
+  createdAt, updatedAt
+}
+productsCatalog
+ 
+(planner-to-directory taxonomy)
+{
+  id: "perennials",          // stable key used by planner
+  label: "Perennials",
+  tags: ["plant","ornamental"],
+  synonyms: ["perennial flowers"]
+}
+(Examples: “tomato-starts”, “basil”, “compost”, “topsoil”, “mulch”, “shrubs”, “fruit-trees”, “evergreens”, “gravel”, “pavers”)
+
+plans
+ 
+(optional if you want server persistence)
+{
+  id: string,
+  userId: string,
+  regionId: "western-ny",
+  // minimal mirror of the planner selection to power sidebar matches:
+  selections: [
+    { productId: "tomato-starts", qty?: number },
+    { productId: "perennials" }
+  ],
+  updatedAt: Timestamp
+}
+ 
+4) Security Rules (Firestore – sketch)
+•	suppliers read: public
+•	suppliers write: admins only, or listing owner after claim
+•	reviews create: authenticated users; update/delete: author or admin
+•	plans read/write: only owner userId == request.auth.uid
+
+(Have Copilot generate the exact Firebase rules from these constraints.)
+ 
+5) API Surface (if you add a Node/Express layer later)
+GET  /api/suppliers?city=rochester-ny&category=garden-center&products=perennials,tomato-starts&services=delivery
+GET  /api/suppliers/:slug
+POST /api/reviews               (auth) body: {supplierId, rating, text}
+GET  /api/cities
+GET  /api/products-catalog
+POST /api/suppliers/claim       (auth, start claim flow)
+POST /api/payments/checkout     (auth, Stripe premium plan)
+Query semantics:
+•	products = comma-separated product IDs; return suppliers where products ∩ queryProducts != ∅
+•	Supports lat,lng,radiusKm in future for “near me”
+ 
+6) Frontend Routes / Files (Next.js example)
+/app
+  /layout.tsx
+  /page.tsx                         // Home
+  /planner/page.tsx                 // Full Garden Planner
+  /directory/page.tsx               // Directory hub (choose category/region)
+  /directory/[city]/[category]/page.tsx   // e.g., /directory/rochester-ny/garden-centers
+  /supplier/[slug]/page.tsx               // Business profile
+  /api/*                            // (optional) server routes
+/components
+  DirectoryFilters.tsx
+  SupplierCard.tsx
+  PlannerSidebarMatches.tsx
+  MiniPlannerEmbed.tsx
+  Map.tsx
+  ReviewList.tsx
+  ReviewForm.tsx
+/lib
+  firestore.ts                      // typed queries
+  geoutils.ts
+  taxonomy.ts
+/styles
+  globals.css
+ 
+7) Core Components (behavior specs)
+
+<MiniPlannerEmbed>
+•	Renders small grid with 3–5 example plants.
+•	Emits onSelectionChange(products: string[]).
+
+<PlannerSidebarMatches>
+•	Props: selectedProducts: string[], cityId?: string
+•	Query: suppliers where products intersects selectedProducts (and city/nearby)
+•	Renders grouped by product:
+o	Perennials → [Sollecito], [Van Putte]
+o	Tomatoes → [Chili Garden]
+o	Compost → [Rochester Topsoil & Mulch]
+
+<DirectoryFilters>
+•	Controlled inputs: city, services[], products[], search text
+•	Calls onChange(filters)
+
+<SupplierCard>
+•	Shows name, rating, badges (services/products), distance (if geolocated), [View Profile], [Call], [Website]
+ 
+8) Seed Data (WNY examples to import)
+// suppliers.json (excerpt)
+[
+  {
+    "name": "Sollecito Landscaping Nursery",
+    "slug": "sollecito-landscaping-nursery",
+    "category": "garden-center",
+    "services": ["delivery","design","install"],
+    "products": ["perennials","shrubs","tomato-starts","compost"],
+    "address": {"street":"...","city":"Syracuse","county":"Onondaga","state":"NY","zip":"132XX"},
+    "geo": {"lat":43.0,"lng":-76.1},
+    "phone":"(315) ...",
+    "website":"https://www.sollecito.com",
+    "premium": true,
+    "verified": true
+  },
+  {
+    "name": "Van Putte Gardens",
+    "slug": "van-putte-gardens",
+    "category": "garden-center",
+    "services": ["delivery"],
+    "products": ["perennials","annuals","tomato-starts","mulch","topsoil"],
+    "address": {"city":"Rochester","county":"Monroe","state":"NY","zip":"146XX"},
+    "geo": {"lat":43.2,"lng":-77.6},
+    "phone":"(585) ...",
+    "website":"https://www.vanputte.com",
+    "premium": false,
+    "verified": true
+  }
+]
+ 
+9) Planner ↔ Directory Matching Logic
+
+Input: selectedProducts: string[] from planner (e.g., ["tomato-starts","perennials","compost"])
+Query: suppliers.where("products","array-contains-any", selectedProducts)
+Post-filter: by city/lat-lng radius, by services if user toggled “delivery/install”
+Sort: premium first, then distance, then rating
+ 
+10) Monetization (MVP implementation)
+•	Stripe products:
+o	listing_free ($0)
+o	listing_premium_monthly ($29)
+•	Premium perks in UI:
+o	Featured position (top of list)
+o	Logo shown on cards
+o	Extra photo slots on profile
+o	“Contact” CTA strip
+ 
+11) Analytics & Events (GA4)
+•	planner_selection_change { products: [...] }
+•	directory_filter_change { city, category, products, services }
+•	supplier_profile_view { supplierId }
+•	cta_click { type: "call" | "website" | "get-directions" }
+•	premium_checkout_start { supplierId }
+•	premium_checkout_success { subscriptionId }
+ 
+12) Accessibility & Performance
+•	Semantic headings on landing pages (H1 includes city + category)
+•	<img> with alt, keyboard focus for cards/filters
+•	Lazy-load maps & images
+•	Static generation (Next.js) for city/category pages + ISR for freshness
+ 
+13) Acceptance Criteria (MVP)
+1.	Home
+o	Mini planner emits product IDs; sidebar preview shows ≥1 matching supplier when data exists.
+o	Featured categories route correctly.
+2.	Directory Category Page
+o	Filters change query results without reload.
+o	Planner sidebar updates when planner selection changes (within same session).
+o	Premium listings appear before non-premium (all else equal).
+3.	Supplier Profile
+o	Shows contact info, services, products, map.
+o	Users can submit a review when authenticated; review appears after admin approval.
+4.	SEO
+o	Pages render server-side with unique meta titles: “Garden Centers in Rochester, NY | Sunset Oaks Directory”.
+o	JSON-LD LocalBusiness for profiles.
+5.	Security
+o	Only admins or listing owners can edit supplier records.
+o	Users can only read/write their own plans.
+ 
+14) Copilot Bootstrapping Prompts (paste into VS Code)
+
+Scaffold app (Next.js + Firebase):
+
+Create a Next.js TypeScript app with Firebase (Auth, Firestore, Storage). Add GA4. Configure env for Firebase + Google Maps API key. Add routes: /, /planner, /directory, /directory/[city]/[category], /supplier/[slug]. Install react-query, zustand, stripe-js. Set Tailwind for UI.
+
+Data models & Firestore queries:
+
+Add TypeScript interfaces for Supplier, Review, City, ProductCatalogItem, Plan. Create lib/firestore.ts with typed functions: getSuppliersByFilters(filters), getSupplierBySlug(slug), getCities(), getProductsCatalog(), createReview(). Implement array-contains-any matching for products and optional city filter.
+
+Components:
+
+Build MiniPlannerEmbed that returns selectedProducts (mock toggles for MVP). Build PlannerSidebarMatches that accepts selectedProducts and renders grouped suppliers. Build DirectoryFilters with controlled inputs and debounce.
+
+Pages:
+
+Implement Home with hero, featured categories, mini planner, and seasonal content placeholders. Implement /directory/[city]/[category] to read params, render filters + listing grid + PlannerSidebarMatches. Implement /supplier/[slug] profile page with map, photos, services, review list/form.
+
+Stripe premium:
+
+Add a simple /api/payments/checkout route to create a Stripe Checkout Session for listing_premium_monthly. Add premium flag handling in SupplierCard sorting.
+
+Seed & Admin:
+
+Add a script to import suppliers.json and productsCatalog.json into Firestore. Create a basic admin page /admin/suppliers gated by role claim for adding/editing suppliers (MVP form).
+
