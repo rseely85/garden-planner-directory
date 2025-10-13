@@ -10,7 +10,8 @@
     "reauth": "gcloud auth application-default login",
     "verify": "node scripts/verifyFirestoreData.js",
     "reauth:full": "gcloud auth application-default login && node scripts/verifyFirestoreData.js",
-    "stats": "npx tsx lib/getSupplierStats.ts"
+    "stats": "npx tsx lib/getSupplierStats.ts",
+    "backfill:locations": "npx tsx scripts/backfillSupplierLocations.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
