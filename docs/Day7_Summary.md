@@ -23,3 +23,17 @@ Formatting improvement for validation endpoint and ongoing admin feature stabili
 - Everything else in the admin dashboard and export system remains solid — no need to rework Firestore or export routes.
 
 **Status:** Stable — all admin features functional. Formatting deferred to next phase.
+
+
+**Preparation for Next Phase**
+- Next phase will focus on expanding the Admin Dashboard to include interactive controls for maintenance scripts (verify, stats, backfill).
+- Requires access to:
+  - `/lib/getSupplierStats.ts`
+  - `/scripts/backfillSupplierLocations.ts`
+  - `/scripts/verifyFirestoreData.js`
+  - `/pages/admin/index.tsx`
+  - `/components/AdminDashboard.tsx`
+- Create new API endpoints for `/api/admin/verify`, `/api/admin/stats`, and `/api/admin/backfill` before UI integration.
+- Confirm Firebase Admin and Firestore credentials are active (run `npm run reauth:full` if needed).
+- Ensure `/logs/` directory remains included for writing reports.
+- Begin next session by testing API routes independently using browser or Postman before wiring into the dashboard UI.

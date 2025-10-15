@@ -2,10 +2,16 @@
 import admin from "firebase-admin";
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: "garden-planner-directory",
-  });
+  try {
+    console.log("🔥 Initializing Firebase Admin via applicationDefault...");
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: "garden-planner-directory",
+    });
+  } catch (error) {
+    console.error("❌ Firebase Admin initialization failed:", error);
+  }
 }
 
-export const adminDb = admin.firestore();
+export const db = admin.firestore();
+export { admin };

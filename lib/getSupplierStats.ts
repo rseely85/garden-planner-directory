@@ -1,65 +1,24 @@
-import { getFirestore } from "firebase-admin/firestore";
-import { getApps, initializeApp, applicationDefault } from "firebase-admin/app";
+import { db } from "./firebaseAdmin";
 
-if (!getApps().length) {
-  console.log("🌱 Initializing Firebase Admin (applicationDefault)");
-  initializeApp({
-    credential: applicationDefault(),
-    projectId: process.env.GOOGLE_CLOUD_PROJECT || "garden-planner-directory",
-  });
-}
-
-function isValidString(value: any): boolean {
-  return typeof value === "string" && value.trim() !== "";
-}
-
-function buildFullAddress(address: any): string {
-  if (!address || typeof address !== "object") return "";
-  const parts = [
-    address.street,
-    address.city,
-    address.county ? `${address.county} County` : "",
-    address.state,
-    address.zip,
-  ].filter(isValidString);
-  return parts.join(", ");
-}
-
-async function backfillSupplierLocations() {
-  try {
-    console.log("📡 Connecting to Firestore...");
-    const db = getFirestore();
-    const suppliersRef = db.collection("suppliers");
-    const snapshot = await suppliersRef.get();
-
-    if (snapshot.empty) {
-      console.warn("⚠️ No supplier data found in Firestore.");
-      return;
-    }
-
-    let updatedCount = 0;
-    let skippedCount = 0;
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const currentLocation = data.location;
-      const derivedLocation = buildFullAddress(data.address);
-
-      if (!isValidString(currentLocation) && isValidString(derivedLocation)) {
-        console.log(`📝 Updating ${doc.id} → ${derivedLocation}`);
-        await doc.ref.update({ location: derivedLocation });
-        updatedCount++;
-      } else {
-        skippedCount++;
-      }
-    }
-
-    console.log(`✅ Done! ${updatedCount} supplier(s) updated, ${skippedCount} skipped.`);
-  } catch (err: any) {
-    console.error("🔥 Backfill failed:", err.message);
+export async function getSupplierStats() {
+  console.log("📊 Running Firestore stats fetch...");
+  if (!db) {
+    throw new Error("❌ Firestore Admin client not initialized — db is undefined");
   }
-}
+  const snapshot = await db.collection("suppliers").get();
 
-if (require.main === module) {
-  backfillSupplierLocations();
+  const suppliers = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  const verifiedCount = suppliers.filter((s) => s.verified).length;
+  const premiumCount = suppliers.filter((s) => s.premium).length;
+
+  return {
+    totalSuppliers: suppliers.length,
+    verifiedCount,
+    premiumCount,
+    suppliers,
+  };
 }
