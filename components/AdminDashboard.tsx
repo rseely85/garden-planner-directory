@@ -1,5 +1,5 @@
 // components/AdminDashboard.tsx
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -28,8 +28,64 @@ interface AdminDashboardProps {
   onRefresh: () => void;
 }
 
+type TaskName = "verify" | "stats" | "backfill";
+
+interface TaskResult {
+  ok: boolean;
+  route: string;
+  message: string;
+  data?: unknown;
+  error?: string;
+  timestamp: string;
+}
+
 export default function AdminDashboard({ stats, onRefresh }: AdminDashboardProps) {
   const fileName = `supplier-stats_${new Date().toISOString().slice(0,10)}.csv`;
+
+  const [isRunning, setIsRunning] = useState<Record<TaskName, boolean>>({
+    verify: false,
+    stats: false,
+    backfill: false,
+  });
+  const [lastResult, setLastResult] = useState<TaskResult | null>(null);
+
+  const runTask = useCallback(async (task: TaskName) => {
+    const route = `/api/admin/${task}`;
+    setIsRunning((s) => ({ ...s, [task]: true }));
+    try {
+      const res = await fetch(route, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      const ok = res.ok && (json?.success !== false);
+      const message =
+        json?.message ||
+        (ok ? `✅ ${task} completed successfully.` : `❌ ${task} failed.`);
+      const result: TaskResult = {
+        ok,
+        route,
+        message,
+        data: json?.data,
+        error: ok ? undefined : (json?.error || json?.details || `HTTP ${res.status}`),
+        timestamp: new Date().toISOString(),
+      };
+      setLastResult(result);
+      // If stats were updated, allow caller to refresh summary
+      if (task === "stats" && ok) {
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      const result: TaskResult = {
+        ok: false,
+        route,
+        message: `❌ ${task} failed.`,
+        error: err?.message || String(err),
+        timestamp: new Date().toISOString(),
+      };
+      setLastResult(result);
+      console.error(`[admin:${task}]`, err);
+    } finally {
+      setIsRunning((s) => ({ ...s, [task]: false }));
+    }
+  }, [onRefresh]);
 
   const handleExportCSV = useCallback(async () => {
     try {
@@ -106,6 +162,54 @@ export default function AdminDashboard({ stats, onRefresh }: AdminDashboardProps
           >
             Copy Stats JSON
           </button>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 shadow rounded-lg">
+        <div className="flex items-center justify-between">
+          <h2 className="text-gray-700 font-semibold">Maintenance Tools</h2>
+          {lastResult ? (
+            <span className={`text-sm ${lastResult.ok ? "text-green-700" : "text-red-700"}`}>
+              {lastResult.message}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => runTask("verify")}
+            disabled={isRunning.verify}
+            className={`px-3 py-2 rounded-md text-white ${isRunning.verify ? "bg-gray-400 cursor-wait" : "bg-green-600 hover:bg-green-700"}`}
+          >
+            {isRunning.verify ? "Verifying..." : "Run Verify"}
+          </button>
+
+          <button
+            onClick={() => runTask("stats")}
+            disabled={isRunning.stats}
+            className={`px-3 py-2 rounded-md text-white ${isRunning.stats ? "bg-gray-400 cursor-wait" : "bg-emerald-600 hover:bg-emerald-700"}`}
+          >
+            {isRunning.stats ? "Generating Stats..." : "Generate Stats"}
+          </button>
+
+          <button
+            onClick={() => runTask("backfill")}
+            disabled={isRunning.backfill}
+            className={`px-3 py-2 rounded-md text-white ${isRunning.backfill ? "bg-gray-400 cursor-wait" : "bg-teal-600 hover:bg-teal-700"}`}
+          >
+            {isRunning.backfill ? "Backfilling..." : "Run Backfill"}
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <details className="group">
+            <summary className="cursor-pointer select-none text-sm text-gray-600 group-open:mb-2">
+              View last response
+            </summary>
+            <pre className="max-h-72 overflow-auto text-xs bg-gray-50 p-3 rounded border border-gray-200">
+{JSON.stringify(lastResult, null, 2)}
+            </pre>
+          </details>
         </div>
       </div>
 

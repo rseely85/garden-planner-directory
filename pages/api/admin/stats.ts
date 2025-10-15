@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSupplierStats } from "../../../lib/getSupplierStats";
+import { getAdminStats } from "@/lib/stats";
 
 /**
  * Admin API — Generate Supplier Stats
@@ -12,17 +12,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log("⚙️ API: Fetching Supplier Stats...");
-    const stats = await getSupplierStats();
+    console.log("⚙️ API: Fetching Admin Stats...");
+    const stats = await getAdminStats();
 
     return res.status(200).json({
       success: true,
-      message: "✅ Supplier stats generated successfully.",
+      message: "✅ Admin stats generated successfully.",
       totalSuppliers: stats.totalSuppliers,
       verifiedCount: stats.verifiedCount,
       premiumCount: stats.premiumCount,
-      incompleteSuppliers: stats.incompleteSuppliers,
-      suppliers: stats.suppliers,
+      categories: stats.categories,
+      services: stats.services,
+      regions: stats.regions,
+      lastUpdated: stats.lastUpdated,
     });
   } catch (error: any) {
     console.error("🔥 API stats error:", error.message);
