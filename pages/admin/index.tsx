@@ -1,5 +1,7 @@
 // components/AdminDashboard.tsx
 import React, { useState, useEffect } from "react";
+import MaintenanceTools from "@/components/MaintenanceTools";
+import SupplierEditor from "@/components/SupplierEditor";
 
 interface AdminDashboardProps {
   stats: any;
@@ -70,6 +72,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
             <pre>{JSON.stringify(value, null, 2)}</pre>
           </div>
         ))}
+      </div>
+      <MaintenanceTools />
+      <div className="mt-8">
+        <SupplierEditor />
       </div>
     </div>
   );
