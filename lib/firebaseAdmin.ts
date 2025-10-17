@@ -1,17 +1,14 @@
 // lib/firebaseAdmin.ts
-import admin from "firebase-admin";
+import * as admin from "firebase-admin";
 
 if (!admin.apps.length) {
-  try {
-    console.log("🔥 Initializing Firebase Admin via applicationDefault...");
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: "garden-planner-directory",
-    });
-  } catch (error) {
-    console.error("❌ Firebase Admin initialization failed:", error);
-  }
+  console.log("🔥 Initializing Firebase Admin via applicationDefault...");
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
 }
 
-export const db = admin.firestore();
-export { admin };
+const db = admin.firestore();
+
+export const getFirestore = () => db;
+export { admin, db };
