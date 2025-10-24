@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "reauth": "gcloud auth application-default login",
     "verify": "node scripts/verifyFirestoreData.js",
     "reauth:full": "gcloud auth application-default login && node scripts/verifyFirestoreData.js",
@@ -32,8 +32,11 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
     "@swc/core": "^1.13.5",
     "@types/react": "19.1.13",
+    "eslint": "^9.38.0",
+    "eslint-config-next": "16.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.0.0"

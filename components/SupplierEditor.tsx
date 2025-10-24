@@ -1,25 +1,36 @@
-
-
 import React, { useEffect, useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseClient";
 
 type Supplier = {
   id: string;
+  slug?: string;
   name: string;
   category: string;
   verified: boolean;
   premium: boolean;
-  city?: string;
-  state?: string;
+  address?: {
+    city?: string;
+    state?: string;
+    zip?: string;
+    street?: string;
+    postalCode?: string;
+  };
 };
 
-const SupplierEditor: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editedData, setEditedData] = useState<Partial<Supplier>>({});
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+interface SupplierEditorProps {
+  filterIds?: string[];
+}
 
-  // Fetch suppliers from Firestore API
+const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editedData, setEditedData] = useState<Supplier | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Fetch suppliers (all or filtered)
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
@@ -37,58 +48,187 @@ const SupplierEditor: React.FC = () => {
     }
   };
 
+  // Refresh all data
+  const refreshAll = async () => {
+    await fetchSuppliers();
+    console.log("♻️ Data refreshed after save");
+  };
+
+  // Re-fetch when filters change
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [filterIds]);
 
   const handleEdit = (supplier: Supplier) => {
     setEditingId(supplier.id);
-    setEditedData(supplier);
+    setEditedData({
+      ...supplier,
+      address: supplier.address ? { ...supplier.address } : undefined,
+    });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setEditedData({});
+    setEditedData(null);
   };
 
-  const handleChange = (field: keyof Supplier, value: any) => {
-    setEditedData({ ...editedData, [field]: value });
+  const handleFieldChange = <K extends keyof Omit<Supplier, "id" | "address">>(field: K, value: Supplier[K]) => {
+    setEditedData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
-  const handleSave = async (id: string) => {
-    try {
-      const response = await fetch("/api/admin/updateSupplier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, updates: editedData }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setSuppliers((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, ...editedData } : s))
-        );
-        setMessage("✅ Supplier updated successfully.");
+  const handleAddressChange = (
+    field: keyof NonNullable<Supplier["address"]>,
+    value: string
+  ) => {
+    setEditedData((prev) => {
+      if (!prev) return prev;
+      const nextAddress = { ...(prev.address ?? {}) };
+      if (field === "zip" || field === "postalCode") {
+        nextAddress.zip = value;
+        nextAddress.postalCode = value;
       } else {
-        setMessage("❌ Failed to update supplier: " + result.message);
+        nextAddress[field] = value;
       }
+      return { ...prev, address: nextAddress };
+    });
+  };
+
+  const handleSave = async (fallbackId: string) => {
+    if (!editedData) {
+      console.warn("No supplier data staged for save");
+      return;
+    }
+
+    const docKey = editedData.slug ?? editedData.id ?? fallbackId;
+    if (!docKey) {
+      console.error("❌ No valid docRef for supplier", editedData);
+      setMessage({ type: "error", text: "Unable to resolve supplier record." });
+      return;
+    }
+
+    const rawZip = editedData.address?.zip ?? editedData.address?.postalCode;
+    const trimmedZip = rawZip ? rawZip.toString().trim() : undefined;
+    if (trimmedZip && trimmedZip.length < 5) {
+      setMessage({ type: "error", text: "ZIP codes must be at least 5 characters." });
+      return;
+    }
+
+    const payloadAddress =
+      editedData.address &&
+      (() => {
+        const city = editedData.address.city?.trim();
+        const state = editedData.address.state?.trim();
+        const street = editedData.address.street?.trim();
+        const addressPayload: NonNullable<Supplier["address"]> = {
+          ...editedData.address,
+          ...(city !== undefined ? { city } : {}),
+          ...(state !== undefined ? { state } : {}),
+          ...(street !== undefined ? { street } : {}),
+        };
+        if (trimmedZip !== undefined) {
+          addressPayload.zip = trimmedZip;
+          addressPayload.postalCode = trimmedZip;
+        }
+        return addressPayload;
+      })();
+
+    try {
+      const docRef = doc(db, "suppliers", docKey);
+      if (!docRef.id) {
+        console.error("❌ No valid docRef for", editedData);
+        setMessage({ type: "error", text: "Unable to resolve supplier record." });
+        return;
+      }
+
+      const updates: Record<string, unknown> = {
+        name: editedData.name,
+        category: editedData.category,
+        verified: editedData.verified,
+        premium: editedData.premium,
+      };
+
+      if (payloadAddress) {
+        updates.address = payloadAddress;
+      }
+
+      await updateDoc(docRef, updates);
+
+      setSuppliers((prev) =>
+        prev.map((supplier) =>
+          supplier.id === docRef.id || supplier.slug === docRef.id
+            ? {
+                ...supplier,
+                name: editedData.name ?? supplier.name,
+                category: editedData.category ?? supplier.category,
+                verified: editedData.verified ?? supplier.verified,
+                premium: editedData.premium ?? supplier.premium,
+                address: payloadAddress ? { ...supplier.address, ...payloadAddress } : supplier.address,
+              }
+            : supplier
+        )
+      );
+
+      console.log("💾 Updated supplier:", editedData.slug || editedData.id || docRef.id, "ZIP →", trimmedZip ?? "(cleared)");
+      await refreshAll();
+      setMessage({ type: "success", text: "Supplier updated successfully." });
     } catch (error) {
-      console.error("Error updating supplier:", error);
-      setMessage("❌ Error saving changes.");
+      console.error("❌ Failed to update supplier:", error);
+      setMessage({ type: "error", text: "Error saving changes." });
     } finally {
       setEditingId(null);
-      setEditedData({});
+      setEditedData(null);
       setTimeout(() => setMessage(null), 4000);
     }
   };
+
+  const getSupplierZip = (supplier: Supplier) =>
+    supplier.address?.zip || supplier.address?.postalCode || "";
+
+  const filterList = Array.isArray(filterIds) ? filterIds : [];
+  const hasMissingZipFilter = filterList.length > 0;
+
+  useEffect(() => {
+    const activeIds = Array.isArray(filterIds) ? filterIds : [];
+    console.log("🪄 Active filter IDs:", activeIds);
+    if (activeIds.length > 0) {
+      const filtered = suppliers.filter((supplier) => {
+        const matchKey = supplier.slug || supplier.id;
+        return matchKey ? activeIds.includes(matchKey) : false;
+      });
+      console.log("🧾 Filtered suppliers:", filtered.map((supplier) => supplier.name));
+      setFilteredSuppliers(filtered);
+    } else {
+      console.log("🧾 Filtered suppliers:", suppliers.map((supplier) => supplier.name));
+      setFilteredSuppliers(suppliers);
+    }
+  }, [filterIds, suppliers]);
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
       <h2 className="text-xl font-semibold mb-4">Supplier Editor</h2>
       {message && (
-        <div className="mb-4 p-2 bg-green-100 text-green-700 rounded">{message}</div>
+        <div
+          className={`mb-4 p-2 rounded ${
+            message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+      {hasMissingZipFilter && (
+        <div className="mb-4 text-sm text-blue-600">
+          <p>
+            Showing {filteredSuppliers.length} supplier{filteredSuppliers.length === 1 ? "" : "s"} with missing ZIPs.
+          </p>
+          {filteredSuppliers.length === 0 && (
+            <em className="text-gray-500">No suppliers match the selected filter.</em>
+          )}
+        </div>
       )}
       {loading ? (
         <p className="text-gray-500">Loading suppliers...</p>
+      ) : filteredSuppliers.length === 0 ? (
+        <p className="text-gray-500">No suppliers to display</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300 rounded-md">
@@ -100,113 +240,129 @@ const SupplierEditor: React.FC = () => {
                 <th className="py-2 px-3 border">Premium</th>
                 <th className="py-2 px-3 border">City</th>
                 <th className="py-2 px-3 border">State</th>
+                <th className="py-2 px-3 border">ZIP</th>
                 <th className="py-2 px-3 border">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {suppliers.map((supplier) => (
-                <tr key={supplier.id} className="hover:bg-gray-50">
-                  <td className="border px-3 py-2">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="text"
-                        className="border p-1 w-full"
-                        value={editedData.name || ""}
-                        onChange={(e) => handleChange("name", e.target.value)}
-                      />
-                    ) : (
-                      supplier.name
-                    )}
-                  </td>
-                  <td className="border px-3 py-2">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="text"
-                        className="border p-1 w-full"
-                        value={editedData.category || ""}
-                        onChange={(e) => handleChange("category", e.target.value)}
-                      />
-                    ) : (
-                      supplier.category
-                    )}
-                  </td>
-                  <td className="border px-3 py-2 text-center">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="checkbox"
-                        checked={editedData.verified || false}
-                        onChange={(e) => handleChange("verified", e.target.checked)}
-                      />
-                    ) : supplier.verified ? (
-                      "✅"
-                    ) : (
-                      "❌"
-                    )}
-                  </td>
-                  <td className="border px-3 py-2 text-center">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="checkbox"
-                        checked={editedData.premium || false}
-                        onChange={(e) => handleChange("premium", e.target.checked)}
-                      />
-                    ) : supplier.premium ? (
-                      "⭐"
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="border px-3 py-2">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="text"
-                        className="border p-1 w-full"
-                        value={editedData.city || ""}
-                        onChange={(e) => handleChange("city", e.target.value)}
-                      />
-                    ) : (
-                      supplier.city || "-"
-                    )}
-                  </td>
-                  <td className="border px-3 py-2">
-                    {editingId === supplier.id ? (
-                      <input
-                        type="text"
-                        className="border p-1 w-full"
-                        value={editedData.state || ""}
-                        onChange={(e) => handleChange("state", e.target.value)}
-                      />
-                    ) : (
-                      supplier.state || "-"
-                    )}
-                  </td>
-                  <td className="border px-3 py-2 text-center">
-                    {editingId === supplier.id ? (
-                      <div className="flex gap-2 justify-center">
+              {filteredSuppliers.map((supplier) => {
+                const supplierZip = getSupplierZip(supplier);
+                return (
+                  <tr key={supplier.id} className="hover:bg-gray-50">
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={editedData?.name ?? ""}
+                          onChange={(e) => handleFieldChange("name", e.target.value)}
+                        />
+                      ) : (
+                        supplier.name
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={editedData?.category ?? ""}
+                          onChange={(e) => handleFieldChange("category", e.target.value)}
+                        />
+                      ) : (
+                        supplier.category
+                      )}
+                    </td>
+                    <td className="border px-3 py-2 text-center">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="checkbox"
+                          checked={editedData?.verified ?? false}
+                          onChange={(e) => handleFieldChange("verified", e.target.checked)}
+                        />
+                      ) : supplier.verified ? (
+                        "✅"
+                      ) : (
+                        "❌"
+                      )}
+                    </td>
+                    <td className="border px-3 py-2 text-center">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="checkbox"
+                          checked={editedData?.premium ?? false}
+                          onChange={(e) => handleFieldChange("premium", e.target.checked)}
+                        />
+                      ) : supplier.premium ? (
+                        "⭐"
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={editedData?.address?.city ?? ""}
+                          onChange={(e) => handleAddressChange("city", e.target.value)}
+                        />
+                      ) : (
+                        supplier.address?.city || "-"
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={editedData?.address?.state ?? ""}
+                          onChange={(e) => handleAddressChange("state", e.target.value)}
+                        />
+                      ) : (
+                        supplier.address?.state || "-"
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={editedData?.address?.zip ?? editedData?.address?.postalCode ?? ""}
+                          onChange={(e) => handleAddressChange("zip", e.target.value)}
+                        />
+                      ) : (
+                        supplierZip || "-"
+                      )}
+                    </td>
+                    <td className="border px-3 py-2 text-center">
+                      {editingId === supplier.id ? (
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                            onClick={() => handleSave(supplier.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
+                            onClick={handleCancel}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                          onClick={() => handleSave(supplier.id)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          onClick={() => handleEdit(supplier)}
                         >
-                          Save
+                          Edit
                         </button>
-                        <button
-                          className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
-                          onClick={handleCancel}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        onClick={() => handleEdit(supplier)}
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

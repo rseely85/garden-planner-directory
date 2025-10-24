@@ -25,6 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       services: stats.services,
       regions: stats.regions,
       lastUpdated: stats.lastUpdated,
+      // Number of regions currently active with suppliers
+      activeRegions: stats.activeRegions,
+      // Count of suppliers missing zip code information
+      missingZips: stats.missingZips,
     });
   } catch (error: any) {
     console.error("🔥 API stats error:", error.message);

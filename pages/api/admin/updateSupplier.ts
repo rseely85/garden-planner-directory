@@ -1,8 +1,6 @@
-import { getFirestore } from "firebase-admin/firestore";
-import { getFirebaseAdmin } from "@/lib/firebaseAdmin";
+import { db } from "@/lib/firebaseAdmin";
 
-const adminApp = getFirebaseAdmin();
-const db = getFirestore(adminApp);
+console.log("🛠 updateSupplier API route triggered");
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,9 +9,15 @@ export default async function handler(req, res) {
 
   try {
     const { id, updates } = req.body;
+    console.log("📩 Incoming update request:", { id, updates });
 
     if (!id || !updates) {
       return res.status(400).json({ success: false, message: "Missing supplier ID or update data" });
+    }
+
+    if (!db) {
+      console.error("❌ Firestore instance not initialized");
+      return res.status(500).json({ success: false, message: "Firestore not initialized" });
     }
 
     // Clean undefined or null fields
@@ -21,19 +25,30 @@ export default async function handler(req, res) {
       Object.entries(updates).filter(([_, v]) => v !== undefined && v !== null)
     );
 
-    // Merge or create document safely
-    await db.collection("suppliers").doc(id).set(cleanedUpdates, { merge: true });
+    console.log("🧹 Cleaned update fields:", cleanedUpdates);
+
+    const supplierRef = db.collection("suppliers").doc(id);
+    const supplierDoc = await supplierRef.get();
+
+    if (!supplierDoc.exists) {
+      console.error(`⚠️ Supplier not found for ID: ${id}`);
+      return res.status(404).json({ success: false, message: `Supplier ${id} not found` });
+    }
+
+    await supplierRef.update(cleanedUpdates);
+    console.log(`✅ Supplier ${id} updated successfully`);
 
     return res.status(200).json({
       success: true,
       message: `Supplier ${id} updated successfully`,
     });
   } catch (error) {
-    console.error("Error updating supplier:", error);
+    console.error("🔥 Error in updateSupplier API:", error);
     return res.status(500).json({
       success: false,
       message: "Error updating supplier",
       error: error.message,
+      stack: error.stack,
     });
   }
 }

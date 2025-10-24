@@ -25,3 +25,20 @@ Multiple troubleshooting steps were undertaken:
 By the end of the day, the dashboard was functional, suppliers were visible, and maintenance tools operated normally. However, the update functionality was temporarily disabled to avoid further errors until a more robust fix could be implemented.
 
 Next steps include safely reintroducing the supplier update logic with careful Firestore admin verification and then testing the PATCH route stability to ensure updates can be performed reliably without breaking the API or authentication.
+## ✅ Checkpoint: Admin Dashboard Stable + NY Regions Seeded
+**Date:** 2025-10-17  
+**Branch:** DEVELOPMENT  
+**Commit:** 0c25c5a0  
+
+**Summary:**
+- Added functional Admin Dashboard base (StatsSummary + ServiceOverview)
+- Firebase Admin refactored with `applicationDefault()` auth
+- Verified Firestore connection and seeding scripts (`seedNYRegions.ts` + `verifyRegions.ts`)
+- Loaded 1,677 NY ZIPs into Firestore under `regions/NY/zips`
+- Dashboard tested and confirmed working end-to-end
+- Editing functionality still pending
+
+**Next Phase Goals:**
+1. Add `/api/admin/regions` endpoint for county/regional aggregation  
+2. Add “Region Overview” section to Admin Dashboard  
+3. Resume edit/create supplier flow after data verification  

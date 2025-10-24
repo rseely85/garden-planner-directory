@@ -1,9 +1,19 @@
 // components/AdminDashboard.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MaintenanceTools from "@/components/MaintenanceTools";
 import SupplierEditor from "@/components/SupplierEditor";
 import StatsSummary from "@/components/StatsSummary";
 import ServiceOverview from "@/components/ServiceOverview";
+import RegionOverview from "@/components/RegionOverview";
+import { fetchMissingZips } from "@/lib/adminApi";
+
+const COLLAPSIBLE_KEYS = {
+  statsSummary: "collapsible_statsSummary",
+  serviceOverview: "collapsible_serviceOverview",
+  regionOverview: "collapsible_regionOverview",
+  maintenanceTools: "collapsible_maintenanceTools",
+  supplierEditor: "collapsible_supplierEditor",
+};
 
 interface AdminDashboardProps {
   stats: any;
@@ -17,7 +27,7 @@ const Collapsible: React.FC<{ title: string; defaultOpen?: boolean; persistKey?:
     if (persistKey) {
       const stored = localStorage.getItem(persistKey);
       if (stored !== null) {
-        setIsOpen(stored === "true");
+        setTimeout(() => setIsOpen(stored === "true"), 0);
       }
     }
   }, [persistKey]);
@@ -47,13 +57,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
   const [statsData, setStats] = useState<any>(stats);
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
   const [renderKey, setRenderKey] = useState(0);
-
-  const collapsibleKeys = {
-    statsSummary: "collapsible_statsSummary",
-    serviceOverview: "collapsible_serviceOverview",
-    maintenanceTools: "collapsible_maintenanceTools",
-    supplierEditor: "collapsible_supplierEditor",
-  };
+  const supplierEditorRef = useRef<HTMLDivElement | null>(null);
+  const [filterIds, setFilterIds] = useState<string[] | null>(null);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -89,7 +94,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
     if (storedExpandAll !== null) {
       setExpandAll(storedExpandAll === "true");
       // Set all collapsibles to that state
-      Object.values(collapsibleKeys).forEach((key) => {
+      Object.values(COLLAPSIBLE_KEYS).forEach((key) => {
         localStorage.setItem(key, storedExpandAll);
       });
     }
@@ -100,10 +105,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
     const newState = !(expandAll === true);
     setExpandAll(newState);
     localStorage.setItem("collapsible_expandAll", newState.toString());
-    Object.values(collapsibleKeys).forEach((key) => {
+    Object.values(COLLAPSIBLE_KEYS).forEach((key) => {
       localStorage.setItem(key, newState.toString());
     });
     setRenderKey((prev) => prev + 1);
+  };
+
+  const handleCardClick = async (type: string, payloadIds?: string[]) => {
+    if (type !== "missingZips") {
+      setFilterIds(null);
+      return;
+    }
+
+    try {
+      let ids: string[] = Array.isArray(payloadIds) ? payloadIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0) : [];
+
+      if (ids.length === 0) {
+        const result = await fetchMissingZips();
+        ids = Array.isArray(result.ids) ? result.ids : [];
+      }
+
+      console.log("🧩 Missing ZIP supplier IDs:", ids);
+
+      if (ids.length === 0) {
+        alert("✅ No suppliers found with missing ZIP codes.");
+        setFilterIds([]);
+        return;
+      }
+
+      setFilterIds(ids);
+      console.log("🔄 Applying Missing ZIP filter in SupplierEditor...");
+
+      setTimeout(() => {
+        localStorage.setItem(COLLAPSIBLE_KEYS.supplierEditor, "true");
+        setRenderKey((prev) => prev + 1);
+        supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    } catch (error) {
+      console.error("❌ Failed to load missing ZIPs:", error);
+      alert("Failed to fetch missing ZIPs — check the API or Firestore connection.");
+    }
   };
 
   if (loading) {
@@ -140,18 +181,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
           {expandAll === true ? "Collapse All" : "Expand All"}
         </button>
       </div>
-      <Collapsible key={`statsSummary-${renderKey}`} title="📊 Stats Summary" defaultOpen persistKey={collapsibleKeys.statsSummary}>
-        <StatsSummary stats={statsData} />
+      <Collapsible key={`statsSummary-${renderKey}`} title="📊 Stats Summary" defaultOpen persistKey={COLLAPSIBLE_KEYS.statsSummary}>
+        <StatsSummary stats={statsData} onCardClick={handleCardClick} />
       </Collapsible>
-      <Collapsible key={`serviceOverview-${renderKey}`} title="🧭 Service Overview" persistKey={collapsibleKeys.serviceOverview}>
+      <Collapsible key={`serviceOverview-${renderKey}`} title="🧭 Service Overview" persistKey={COLLAPSIBLE_KEYS.serviceOverview}>
         <ServiceOverview stats={statsData} />
       </Collapsible>
-      <Collapsible key={`maintenanceTools-${renderKey}`} title="🧰 Maintenance Tools" persistKey={collapsibleKeys.maintenanceTools}>
+      <Collapsible key={`regionOverview-${renderKey}`} title="🗺️ Region Overview" persistKey="collapsible_regionOverview">
+        <RegionOverview />
+      </Collapsible>
+      <Collapsible key={`maintenanceTools-${renderKey}`} title="🧰 Maintenance Tools" persistKey={COLLAPSIBLE_KEYS.maintenanceTools}>
         <MaintenanceTools />
       </Collapsible>
-      <Collapsible key={`supplierEditor-${renderKey}`} title="🧾 Supplier Editor" persistKey={collapsibleKeys.supplierEditor}>
-        <SupplierEditor />
-      </Collapsible>
+      <div ref={supplierEditorRef}>
+        <Collapsible key={`supplierEditor-${renderKey}`} title="🧾 Supplier Editor" persistKey={COLLAPSIBLE_KEYS.supplierEditor}>
+          <SupplierEditor key={filterIds?.join(",") || "all"} filterIds={filterIds ?? undefined} />
+        </Collapsible>
+      </div>
     </div>
   );
 };

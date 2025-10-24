@@ -1,12 +1,12 @@
 
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { getFirestore } from "../../../lib/firebaseAdmin";
+import { getFirebaseAdmin } from "../../../lib/firebaseAdmin";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("📊 Fetching Service Overview data...");
   try {
-    const db = getFirestore();
+    const db = getFirebaseAdmin().firestore();
     const snapshot = await db.collection("suppliers").get();
 
     if (snapshot.empty) {
