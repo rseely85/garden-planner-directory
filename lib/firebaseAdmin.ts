@@ -19,6 +19,7 @@ const db = admin.firestore(firebaseApp);
 const auth = admin.auth(firebaseApp);
 
 export { firebaseApp, db, auth };
+export const adminDb = db;
 
 // ✅ Optional helper for consistency
 export function getFirebaseAdmin() {

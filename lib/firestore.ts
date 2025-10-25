@@ -1,47 +1,24 @@
 import type { Supplier, Category } from "./types";
-
-// ✅ SERVER: use firebase-admin only when not running in browser
-let serverDb: FirebaseFirestore.Firestore | null = null;
-if (typeof window === "undefined") {
-  const { adminDb } = require("./firebaseAdmin");
-  serverDb = adminDb;
-}
-
-// ✅ CLIENT: use Firebase Web SDK
-import { db as clientDb } from "./firebaseClient";
-import { collection, getDocs } from "firebase/firestore";
-
+import { getAllSuppliersAdmin } from "@/lib/data/suppliers";
 /**
  * Fetch all suppliers from Firestore.
  * Automatically detects whether running server-side or client-side.
  */
 export async function getSuppliers(): Promise<Supplier[]> {
   try {
-    if (typeof window === "undefined" && serverDb) {
-      // --- SERVER-SIDE FETCH ---
-      const snapshot = await serverDb.collection("suppliers").get();
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-        };
-      }) as Supplier[];
-    } else {
-      // --- CLIENT-SIDE FETCH ---
-      const snapshot = await getDocs(collection(clientDb, "suppliers"));
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-        };
-      }) as Supplier[];
+    if (typeof window === "undefined") {
+      const suppliers = await getAllSuppliersAdmin();
+      return suppliers as Supplier[];
     }
+
+    const response = await fetch("/api/suppliers");
+    const json = await response.json();
+    const suppliers = (json?.suppliers ?? []) as Supplier[];
+    if (!suppliers.length) {
+      console.warn("⚠️ No suppliers loaded — check Firestore data or authentication.");
+    }
+    console.log("🧾 Suppliers loaded:", suppliers);
+    return suppliers;
   } catch (error) {
     console.error("❌ Firestore error fetching suppliers:", error);
     return [];

@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
 
 type Supplier = {
   id: string;
@@ -20,15 +18,18 @@ type Supplier = {
 
 interface SupplierEditorProps {
   filterIds?: string[];
+  onMissingZipResolved?: () => void;
+  pageSize?: number;
 }
 
-const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
+const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZipResolved, pageSize = 5 }) => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedData, setEditedData] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch suppliers (all or filtered)
   const fetchSuppliers = async () => {
@@ -132,30 +133,28 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
         return addressPayload;
       })();
 
+    const updates: Record<string, unknown> = {
+      name: editedData.name,
+      category: editedData.category,
+      verified: editedData.verified,
+      premium: editedData.premium,
+      address: payloadAddress,
+    };
+
     try {
-      const docRef = doc(db, "suppliers", docKey);
-      if (!docRef.id) {
-        console.error("❌ No valid docRef for", editedData);
-        setMessage({ type: "error", text: "Unable to resolve supplier record." });
-        return;
+      const response = await fetch("/api/admin/updateSupplier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: docKey, updates }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.message || "Failed to update supplier");
       }
-
-      const updates: Record<string, unknown> = {
-        name: editedData.name,
-        category: editedData.category,
-        verified: editedData.verified,
-        premium: editedData.premium,
-      };
-
-      if (payloadAddress) {
-        updates.address = payloadAddress;
-      }
-
-      await updateDoc(docRef, updates);
 
       setSuppliers((prev) =>
         prev.map((supplier) =>
-          supplier.id === docRef.id || supplier.slug === docRef.id
+          supplier.id === docKey || supplier.slug === docKey
             ? {
                 ...supplier,
                 name: editedData.name ?? supplier.name,
@@ -168,8 +167,11 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
         )
       );
 
-      console.log("💾 Updated supplier:", editedData.slug || editedData.id || docRef.id, "ZIP →", trimmedZip ?? "(cleared)");
+      console.log("💾 Updated supplier:", editedData.slug || editedData.id || docKey, "ZIP →", trimmedZip ?? "(cleared)");
       await refreshAll();
+      if (hasMissingZipFilter && typeof onMissingZipResolved === "function") {
+        onMissingZipResolved();
+      }
       setMessage({ type: "success", text: "Supplier updated successfully." });
     } catch (error) {
       console.error("❌ Failed to update supplier:", error);
@@ -201,7 +203,16 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
       console.log("🧾 Filtered suppliers:", suppliers.map((supplier) => supplier.name));
       setFilteredSuppliers(suppliers);
     }
+    setCurrentPage(1);
   }, [filterIds, suppliers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterIds]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSuppliers.length / pageSize));
+  const pageStart = (currentPage - 1) * pageSize;
+  const paginatedSuppliers = filteredSuppliers.slice(pageStart, pageStart + pageSize);
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -245,7 +256,7 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredSuppliers.map((supplier) => {
+              {paginatedSuppliers.map((supplier) => {
                 const supplierZip = getSupplierZip(supplier);
                 return (
                   <tr key={supplier.id} className="hover:bg-gray-50">
@@ -365,6 +376,30 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds }) => {
               })}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+              <span>
+                Showing {pageStart + 1}-{Math.min(pageStart + pageSize, filteredSuppliers.length)} of {filteredSuppliers.length}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
+                <span>Page {currentPage} / {totalPages}</span>
+                <button
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 // pages/index.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import SupplierCard from "../components/SupplierCard";
 import FilterBar from "../components/FilterBar";
 import type { Supplier } from "../lib/types";
@@ -9,6 +9,13 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortOption, setSortOption] = useState("");
+
+  useEffect(() => {
+    if (!suppliers || suppliers.length === 0) {
+      console.warn("⚠️ No suppliers loaded — check Firestore data or authentication.");
+    }
+    console.log("🧾 Suppliers loaded:", suppliers);
+  }, [suppliers]);
 
   // Extract unique categories for dropdown
   const categories = useMemo(() => {
@@ -85,9 +92,10 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
 
 export async function getServerSideProps() {
   const suppliers = await getSuppliers();
+  const serializableSuppliers = JSON.parse(JSON.stringify(suppliers));
   return {
     props: {
-      suppliers,
+      suppliers: serializableSuppliers,
     },
   };
 }

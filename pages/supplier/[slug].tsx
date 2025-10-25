@@ -1,24 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import React from "react";
 import Link from "next/link";
 import ReviewList from "../../components/ReviewList";
 import ReviewForm from "../../components/ReviewForm";
 import { getSupplierBySlug } from "../../lib/firestore";
 import type { Supplier } from "../../lib/types";
 
-export default function SupplierPage() {
-  const router = useRouter();
-  const { slug } = router.query;
-  const [supplier, setSupplier] = useState<Supplier | null>(null);
+interface SupplierPageProps {
+  supplier: Supplier | null;
+}
 
-  useEffect(() => {
-    if (slug) {
-      getSupplierBySlug(slug as string)
-        .then((data) => setSupplier(data))
-        .catch(() => setSupplier(null));
-    }
-  }, [slug]);
-
+export default function SupplierPage({ supplier }: SupplierPageProps) {
   if (!supplier) {
     return (
       <div className="p-8 max-w-4xl mx-auto text-center">
@@ -115,4 +106,14 @@ export default function SupplierPage() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps({ params }) {
+  const supplier = params?.slug ? await getSupplierBySlug(params.slug as string) : null;
+
+  return {
+    props: {
+      supplier: supplier ? JSON.parse(JSON.stringify(supplier)) : null,
+    },
+  };
 }

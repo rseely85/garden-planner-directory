@@ -1,25 +1,8 @@
-import { getFirestore } from "firebase-admin/firestore";
-import { getApps, initializeApp } from "firebase-admin/app";
-import { getFirebaseAdmin } from "@/lib/firebaseAdmin";
-
-let db;
-
-if (!getApps().length) {
-  const adminApp = getFirebaseAdmin();
-  db = getFirestore(adminApp);
-} else {
-  db = getFirestore();
-}
+import { getAllSuppliersAdmin } from "@/lib/data/suppliers";
 
 export default async function handler(req, res) {
   try {
-    const snapshot = await db.collection("suppliers").get();
-
-    const suppliers = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
+    const suppliers = await getAllSuppliersAdmin();
     res.status(200).json({ success: true, suppliers });
   } catch (error) {
     console.error("Error fetching suppliers:", error);

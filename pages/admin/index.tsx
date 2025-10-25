@@ -139,11 +139,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
       setTimeout(() => {
         localStorage.setItem(COLLAPSIBLE_KEYS.supplierEditor, "true");
         setRenderKey((prev) => prev + 1);
-        supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     } catch (error) {
       console.error("❌ Failed to load missing ZIPs:", error);
       alert("Failed to fetch missing ZIPs — check the API or Firestore connection.");
+    }
+  };
+
+  const handleMissingZipResolved = async () => {
+    try {
+      const result = await fetchMissingZips();
+      const ids = Array.isArray(result.ids) ? result.ids : [];
+      setFilterIds(ids);
+      if (ids.length === 0) {
+        supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } catch (error) {
+      console.error("❌ Failed to refresh missing ZIPs:", error);
     }
   };
 
@@ -168,7 +181,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
       <div className="mb-6 flex space-x-4">
         <button
-          onClick={fetchStats}
+          onClick={() => {
+            fetchStats();
+            setFilterIds(null);
+            supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded"
         >
           Refresh
@@ -195,7 +212,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
       </Collapsible>
       <div ref={supplierEditorRef}>
         <Collapsible key={`supplierEditor-${renderKey}`} title="🧾 Supplier Editor" persistKey={COLLAPSIBLE_KEYS.supplierEditor}>
-          <SupplierEditor key={filterIds?.join(",") || "all"} filterIds={filterIds ?? undefined} />
+          <SupplierEditor
+            key={filterIds?.join(",") || "all"}
+            filterIds={filterIds ?? undefined}
+            onMissingZipResolved={handleMissingZipResolved}
+            pageSize={5}
+          />
         </Collapsible>
       </div>
     </div>
