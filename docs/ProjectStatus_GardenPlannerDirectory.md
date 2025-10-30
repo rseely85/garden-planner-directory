@@ -12,6 +12,7 @@
   - Public directory home (`pages/index.tsx`) with canonical Admin-SDK supplier fetch (via `/api/suppliers`), server-side rendering, search, category filter, and sorting.  
   - Supplier detail pages render on the server to avoid bundling Firebase Admin into the client.  
   - Dynamic admin suite (StatsSummary, ServiceOverview, RegionOverview, MaintenanceTools, SupplierEditor) with missing-ZIP filtering, pagination, and inline edits wired to `/api/admin/updateSupplier`.  
+  - Validation Report (`/admin/validation-report`) offering filterable/sortable audit data and filter-aware CSV download.  
   - Firestore seeded with suppliers, products catalog, and 1,677 New York ZIPs/region metadata.  
   - Scripts for seeding (`seedFirestore.js`, `seedNYRegions.ts`) and validation (`verifyFirestoreData.js`, `verifyRegions.ts`).  
   - Modernized linting via ESLint v9 flat config and `npm run lint` enforcement.
@@ -25,7 +26,7 @@
 | **Admin Analytics & Reporting** | ✅ Complete | Dashboard aggregates stats, service mix, regional coverage; CSV/JSON export endpoints exist. |
 | **Data Seeding & Maintenance** | ✅ Complete | Region ZIP set + supplier/product catalogs seeded; maintenance scripts verified. |
 | **Missing ZIP Detection & Repair** | ✅ Complete | `/api/admin/missingZips` + StatsSummary + SupplierEditor filter, pagination, scroll-to-editor focus, and inline ZIP save (via `/api/admin/updateSupplier`). |
-| **Validation Reporting** | ⚠️ Partial | `/api/admin/validation` returns data; HTML/report UX still pending. |
+| **Validation Reporting** | ✅ Complete | Filterable `/admin/validation-report` + `/api/admin/validation` supports filters, sorting, and CSV exports. |
 | **Planner ↔ Directory Integration** | ⚪ Not Started | No mini-planner or sidebar matches on public site yet. |
 | **Business Profiles / Reviews / Auth** | ⚪ Not Started | Profile route scaffolding exists, but reviews, auth, and editable profiles are future work. |
 | **Monetization (Premium, Stripe, Ads)** | ⚪ Not Started | Pricing model defined, but Stripe flows and premium UI states are not yet coded. |
@@ -40,7 +41,7 @@
 3. **Premium Monetization:** Stripe checkout endpoint and premium feature gating absent.  
 4. **Directory Depth:** Only a generic home page is live—city/category landing pages, map embeds, and content sections remain TODO.  
 5. **User-Generated Content:** Reviews, photos, and showcase galleries are still conceptual.  
-6. **Operational Automation:** Region auto-assignment, validation dashboards, and scheduled exports require polish for non-dev use.  
+6. **Operational Automation:** Region auto-assignment and scheduled exports require polish for non-dev use (validation dashboard now production-ready).  
 7. **QA & Deployment:** No staging/prod deploy workflow or automated tests yet; manual QA only.  
 
 ---
@@ -49,10 +50,11 @@
 Each function is split into ~3-hour **Coding (C)** sessions handled by Codex and ~3-hour **Testing/QA (T)** sessions for Robert. ChatGPT will manage planning between blocks.
 
 ### Priority P0 – Data Integrity & Admin Ops
-- **C1 (≈3h):** Finish validation-report UI (/admin/validation-report) with table + CSV download tied to `/api/admin/validation`.  
-- **T1 (≈3h):** Robert validates report accuracy against Firestore (compare API vs. export log) and exercises Missing ZIP fixes end-to-end.
-- **C2 (≈3h):** Add automated region assignment + status markers in Admin Dashboard; expose maintenance scripts as buttons with toast feedback.  
-- **T2 (≈3h):** QA maintenance actions (region reassignment, stats refresh) and confirm log entries captured in `/logs/`.
+- ~~**C1:** Validation-report UI + CSV foundation~~ ✅  
+- ~~**T1:** Validation QA + Missing ZIP regression~~ ✅  
+- ~~**C2:** Validation report enhancements (filters, sorting, exports, navigation)~~ ✅  
+- **C3 (≈3h):** Automated data repair helpers (bulk email/location fixes, scripted cleanup flows).  
+- **T3 (≈3h):** QA automated repair routines and confirm dashboards reflect updated supplier data.
 
 ### Priority P1 – Public Directory Experience
 - **C3 (≈3h):** Build `/directory/[city]/[category]` route with Firestore query filters, SEO meta, and SSR.  
@@ -100,9 +102,9 @@ Robert can schedule these blocks sequentially or mix/match based on availability
 ---
 
 ## 6. Immediate Next Actions
-1. **Codex:** Start Block 1 (validation-report UI) on DEVELOPMENT branch; keep API contract stable.  
-2. **Robert:** Prepare QA checklist for validation report & Missing ZIP regression ahead of Block 2.  
-3. **ChatGPT:** Facilitate sprint planning, ensuring each 3-hour slot has entry criteria, exit criteria, and testing steps.
+1. **Codex:** Kick off Block C3 — design and implement automated supplier data repair scripts/tools.  
+2. **Robert:** Document high-priority data issues (e.g., missing emails/regions) and prepare validation steps for repaired records.  
+3. **ChatGPT:** Coordinate the next sprint plan with updated acceptance criteria for C3 and downstream blocks.
 
 ---
 

@@ -1,5 +1,33 @@
 import { db } from "./firebaseAdmin";
 
+type SupplierDoc = {
+  name?: string;
+  email?: string;
+  verified?: boolean;
+  premium?: boolean;
+  location?: string;
+  region?: string;
+  county?: string;
+  lastUpdated?: string;
+  updatedAt?: FirebaseFirestore.Timestamp | string;
+  createdAt?: FirebaseFirestore.Timestamp | string;
+  slug?: string;
+  [key: string]: any;
+};
+
+const toIsoString = (value: any): string | null => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value.toDate === "function") {
+    try {
+      return value.toDate().toISOString();
+    } catch (err) {
+      return null;
+    }
+  }
+  return null;
+};
+
 export async function getSupplierStats() {
   console.log("📊 Running Firestore stats fetch...");
   if (!db) {
@@ -8,20 +36,33 @@ export async function getSupplierStats() {
   const snapshot = await db.collection("suppliers").get();
 
   const suppliers = snapshot.docs.map((doc) => {
-    const data = doc.data();
+    const data = doc.data() as SupplierDoc;
+    const missingFields = [
+      !data.name && "name",
+      !data.email && "email",
+      !data.verified && "verified",
+      !data.premium && "premium",
+      !data.location && "location",
+      (!data.lastUpdated && !data.updatedAt && !data.createdAt) && "lastUpdated",
+    ].filter(Boolean) as string[];
+
+    const region = data.region || data.county || data.location || null;
+
     return {
       id: doc.id,
-      ...data,
-      lastUpdated: data.lastUpdated || null,
+      slug: data.slug || doc.id,
+      name: data.name || "(missing name)",
+      category: data.category || null,
+      email: data.email || null,
+      verified: Boolean(data.verified),
+      premium: Boolean(data.premium),
       location: data.location || null,
-      missingFields: [
-        !data.name && "name",
-        !data.email && "email",
-        !data.verified && "verified",
-        !data.premium && "premium",
-        !data.location && "location",
-        !data.lastUpdated && "lastUpdated",
-      ].filter(Boolean),
+      region,
+      missingFields,
+      createdAt: toIsoString(data.createdAt),
+      updatedAt: toIsoString(data.updatedAt),
+      lastUpdated: data.lastUpdated || toIsoString(data.updatedAt),
+      raw: data,
     };
   });
 

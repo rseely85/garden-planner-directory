@@ -1,5 +1,6 @@
 // components/MaintenanceTools.tsx
 import React, { useState } from "react";
+import Link from "next/link";
 
 interface ActionResponse {
   success: boolean;
@@ -85,6 +86,12 @@ const MaintenanceTools: React.FC = () => {
         >
           {loading === "Regenerate Stats" ? "Running..." : "🔁 Regenerate Stats"}
         </button>
+        <Link
+          href="/admin/validation-report"
+          className="px-4 py-2 rounded bg-teal-600 hover:bg-teal-700 text-white flex items-center"
+        >
+          📋 Validation Report
+        </Link>
 
         <button
           onClick={() => handleAction("verify", "Verify Supplier Data")}

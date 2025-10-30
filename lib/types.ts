@@ -30,4 +30,20 @@ export interface Supplier {
   // Flags
   premium?: boolean;
   verified?: boolean;
+  region?: string | null;
+  missingFields?: string[];
+  updatedAt?: string | null;
+  lastUpdated?: string | null;
+}
+
+export interface ValidationEntry {
+  id: string;
+  name: string;
+  slug: string;
+  category?: string | null;
+  missingFields: string[];
+  address?: string | null;
+  region?: string | null;
+  lastUpdated?: string | null;
+  verified?: boolean;
 }
