@@ -1,19 +1,5 @@
-import { db } from "./firebaseAdmin";
-
-type SupplierDoc = {
-  name?: string;
-  email?: string;
-  verified?: boolean;
-  premium?: boolean;
-  location?: string;
-  region?: string;
-  county?: string;
-  lastUpdated?: string;
-  updatedAt?: FirebaseFirestore.Timestamp | string;
-  createdAt?: FirebaseFirestore.Timestamp | string;
-  slug?: string;
-  [key: string]: any;
-};
+import { getAllSuppliersAdmin } from "@/lib/data/suppliers";
+import { getAllRegions, getAllCategories, getAllOfferings, getAllProducts } from "@/lib/data/masterData";
 
 const toIsoString = (value: any): string | null => {
   if (!value) return null;
@@ -28,46 +14,133 @@ const toIsoString = (value: any): string | null => {
   return null;
 };
 
+const normalizeZip = (zip?: string | null) => {
+  if (!zip) return undefined;
+  const cleaned = zip.toString().trim();
+  if (!cleaned) return undefined;
+  return cleaned.padStart(5, "0");
+};
+
+const toTitle = (value: string) =>
+  value
+    .split(/[\s-_]+/)
+    .filter(Boolean)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+
 export async function getSupplierStats() {
   console.log("📊 Running Firestore stats fetch...");
-  if (!db) {
-    throw new Error("❌ Firestore Admin client not initialized — db is undefined");
-  }
-  const snapshot = await db.collection("suppliers").get();
+  const [supplierViews, regionRecords, categoryRecords, offeringRecords, productRecords] = await Promise.all([
+    getAllSuppliersAdmin(),
+    getAllRegions(),
+    getAllCategories(),
+    getAllOfferings(),
+    getAllProducts(),
+  ]);
 
-  const suppliers = snapshot.docs.map((doc) => {
-    const data = doc.data() as SupplierDoc;
-    const missingFields = [
-      !data.name && "name",
-      !data.email && "email",
-      !data.verified && "verified",
-      !data.premium && "premium",
-      !data.location && "location",
-      (!data.lastUpdated && !data.updatedAt && !data.createdAt) && "lastUpdated",
-    ].filter(Boolean) as string[];
+  const categoryNameMap = new Map(categoryRecords.map((category) => [category.id, category.name]));
+  const offeringNameMap = new Map(offeringRecords.map((offering) => [offering.id, offering.name]));
+  const productNameMap = new Map(productRecords.map((product) => [product.id, product.name]));
 
-    const region = data.region || data.county || data.location || null;
+  const zipToRegion = new Map<string, string>();
+  const regionNameMap = new Map<string, string>();
+  regionRecords.forEach((region) => {
+    regionNameMap.set(region.id, region.name);
+    region.zipCodes.forEach((zip) => {
+      const normalized = normalizeZip(zip);
+      if (normalized) {
+        zipToRegion.set(normalized, region.id);
+      }
+    });
+  });
+
+  const suppliers = supplierViews.map((supplier) => {
+    const missingFields: string[] = [];
+    const categoryIds = supplier.categories ?? [];
+    const offeringIds = supplier.offerings ?? [];
+    const productIds = supplier.products ?? [];
+    const categoryLabels = categoryIds.map((id) => categoryNameMap.get(id) ?? toTitle(id));
+    const offeringLabels = offeringIds.map((id) => offeringNameMap.get(id) ?? toTitle(id));
+    const productLabels = productIds.map((id) => productNameMap.get(id) ?? toTitle(id));
+    if (!supplier.name) missingFields.push("name");
+    if (!supplier.email) missingFields.push("email");
+    if (supplier.verified === undefined) missingFields.push("verifiedFlagMissing");
+    if (supplier.premium === undefined) missingFields.push("premiumFlagMissing");
+
+    if (!categoryIds.length) {
+      missingFields.push("categories");
+    }
+    if (!offeringIds.length) {
+      missingFields.push("offerings");
+    }
+    if (!productIds.length) {
+      missingFields.push("products");
+    }
+
+    const address = supplier.address;
+    const zip = normalizeZip(address?.zip);
+    if (!address?.city || !address?.state) {
+      missingFields.push("address");
+    }
+    if (!zip) {
+      missingFields.push("zip");
+    }
+
+    const recordedRegionId = address?.regionId || null;
+    const recordedRegionName = recordedRegionId ? regionNameMap.get(recordedRegionId) ?? null : null;
+    if (!recordedRegionId) {
+      missingFields.push("regionId");
+    }
+
+    let regionMismatch = false;
+    if (zip && recordedRegionId) {
+      const derivedRegionId = zipToRegion.get(zip);
+      if (derivedRegionId && derivedRegionId !== recordedRegionId) {
+        regionMismatch = true;
+        missingFields.push("regionMismatch");
+      }
+    }
+    const derivedRegionId = zip ? zipToRegion.get(zip) ?? null : null;
+    const derivedRegionName = derivedRegionId ? regionNameMap.get(derivedRegionId) ?? null : null;
+
+    const primaryCategoryId = supplier.category ?? supplier.categories?.[0] ?? null;
+    const primaryCategoryLabel = primaryCategoryId ? categoryNameMap.get(primaryCategoryId) ?? toTitle(primaryCategoryId) : null;
+
+    const createdAt = supplier.createdAt ?? null;
+    const updatedAt = supplier.updatedAt ?? null;
+    const lastUpdated = supplier.lastUpdated ?? updatedAt ?? createdAt ?? null;
 
     return {
-      id: doc.id,
-      slug: data.slug || doc.id,
-      name: data.name || "(missing name)",
-      category: data.category || null,
-      email: data.email || null,
-      verified: Boolean(data.verified),
-      premium: Boolean(data.premium),
-      location: data.location || null,
-      region,
+      id: supplier.id,
+      slug: supplier.slug,
+      name: supplier.name,
+      category: primaryCategoryId,
+      categoryLabel: primaryCategoryLabel,
+      categories: categoryIds,
+      categoryLabels,
+      offerings: offeringIds,
+      offeringLabels,
+      products: productIds,
+      productLabels,
+      email: supplier.email || null,
+      verified: Boolean(supplier.verified),
+      premium: Boolean(supplier.premium),
+      location: supplier.location || undefined,
+      regionId: recordedRegionId,
+      regionName: recordedRegionName,
+      derivedRegionId,
+      derivedRegionName,
+      regionMismatch,
       missingFields,
-      createdAt: toIsoString(data.createdAt),
-      updatedAt: toIsoString(data.updatedAt),
-      lastUpdated: data.lastUpdated || toIsoString(data.updatedAt),
-      raw: data,
+      createdAt,
+      updatedAt,
+      lastUpdated,
+      raw: supplier,
     };
   });
 
-  const verifiedCount = suppliers.filter((s) => s.verified).length;
-  const premiumCount = suppliers.filter((s) => s.premium).length;
+  const verifiedCount = suppliers.filter((s) => s.verified === true).length;
+  const premiumCount = suppliers.filter((s) => s.premium === true).length;
 
   const locationCounts = suppliers.reduce((acc, s) => {
     if (s.location) {

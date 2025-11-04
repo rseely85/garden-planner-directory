@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       premiumCount: stats.premiumCount,
       categories: stats.categories,
       services: stats.services,
+      products: stats.products,
       regions: stats.regions,
       lastUpdated: stats.lastUpdated,
       // Number of regions currently active with suppliers

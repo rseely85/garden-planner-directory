@@ -19,6 +19,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { suppliers } = await getSupplierStats();
 
+    const categoryLookup = new Map<string, string>();
+    const offeringLookup = new Map<string, string>();
+    const productLookup = new Map<string, string>();
+    const regionLookup = new Map<string, string>();
+
+    suppliers.forEach((supplier) => {
+      (supplier.categories || []).forEach((categoryId, index) => {
+        const label = supplier.categoryLabels?.[index] ?? supplier.categoryLabel ?? categoryId;
+        if (!categoryLookup.has(categoryId)) {
+          categoryLookup.set(categoryId, label);
+        }
+      });
+
+      (supplier.offerings || []).forEach((offeringId, index) => {
+        const label = supplier.offeringLabels?.[index] ?? offeringId;
+        if (!offeringLookup.has(offeringId)) {
+          offeringLookup.set(offeringId, label);
+        }
+      });
+
+      (supplier.products || []).forEach((productId, index) => {
+        const label = supplier.productLabels?.[index] ?? productId;
+        if (!productLookup.has(productId)) {
+          productLookup.set(productId, label);
+        }
+      });
+
+      if (supplier.regionId) {
+        regionLookup.set(supplier.regionId, supplier.regionName || supplier.regionId);
+      }
+      if (supplier.derivedRegionId) {
+        regionLookup.set(
+          supplier.derivedRegionId,
+          supplier.derivedRegionName || supplier.derivedRegionId,
+        );
+      }
+    });
+
+    const categoryOptions = Array.from(categoryLookup.entries()).map(([id, label]) => ({
+      id,
+      label,
+    }));
+    const regionOptions = Array.from(regionLookup.entries()).map(([id, label]) => ({
+      id,
+      label,
+    }));
+
     const rawValid = normalizeQueryParam(req.query.valid);
     const categoryFilter = normalizeQueryParam(req.query.category);
     const regionFilter = normalizeQueryParam(req.query.region);
@@ -26,17 +73,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sortKey = normalizeQueryParam(req.query.sort);
     const sortDirection = normalizeQueryParam(req.query.direction) === "desc" ? "desc" : "asc";
 
-    let filteredSuppliers = suppliers.map<ValidationEntry>((supplier) => ({
-      id: supplier.id,
-      name: supplier.name,
-      slug: supplier.slug,
-      category: supplier.category || null,
-      missingFields: supplier.missingFields ?? [],
-      address: supplier.location || supplier.region || null,
-      region: supplier.region ?? supplier.location ?? null,
-      lastUpdated: supplier.lastUpdated ?? supplier.updatedAt ?? null,
-      verified: supplier.verified ?? false,
-    }));
+    let filteredSuppliers = suppliers.map<ValidationEntry>((supplier) => {
+      const primaryCategoryId = supplier.category ?? supplier.categories?.[0] ?? null;
+      const primaryCategoryLabel = primaryCategoryId
+        ? categoryLookup.get(primaryCategoryId) ?? supplier.categoryLabel ?? primaryCategoryId
+        : null;
+      const addressParts: string[] = [];
+      const rawAddress = (supplier.raw as any)?.address || supplier.raw?.address;
+      if (rawAddress?.city) addressParts.push(rawAddress.city);
+      if (rawAddress?.state) addressParts.push(rawAddress.state);
+      const address = supplier.location || addressParts.join(", ") || null;
+      const resolvedRegionId = supplier.regionId || supplier.derivedRegionId || null;
+      const resolvedRegionName =
+        supplier.regionName ||
+        supplier.derivedRegionName ||
+        (resolvedRegionId ? regionLookup.get(resolvedRegionId) ?? resolvedRegionId : null);
+      const categoryLabels = (supplier.categories || []).map(
+        (id, index) => supplier.categoryLabels?.[index] ?? categoryLookup.get(id) ?? id,
+      );
+      const offeringLabels = (supplier.offerings || []).map(
+        (id, index) => supplier.offeringLabels?.[index] ?? offeringLookup.get(id) ?? id,
+      );
+      const productLabels = (supplier.products || []).map(
+        (id, index) => supplier.productLabels?.[index] ?? productLookup.get(id) ?? id,
+      );
+
+      return {
+        id: supplier.id,
+        name: supplier.name,
+        slug: supplier.slug,
+        categoryId: primaryCategoryId,
+        categoryLabel: primaryCategoryLabel,
+        categories: supplier.categories ?? [],
+        categoryLabels,
+        offerings: supplier.offerings ?? [],
+        offeringLabels,
+        products: supplier.products ?? [],
+        productLabels,
+        missingFields: supplier.missingFields ?? [],
+        address,
+        regionId: resolvedRegionId,
+        regionLabel: resolvedRegionName,
+        derivedRegionId: supplier.derivedRegionId ?? null,
+        derivedRegionLabel: supplier.derivedRegionName ?? null,
+        regionMismatch: supplier.regionMismatch ?? false,
+        lastUpdated: supplier.lastUpdated ?? supplier.updatedAt ?? null,
+        verified: supplier.verified ?? false,
+      };
+    });
 
     if (rawValid === "true") {
       filteredSuppliers = filteredSuppliers.filter((entry) => entry.missingFields.length === 0);
@@ -45,11 +129,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (categoryFilter) {
-      filteredSuppliers = filteredSuppliers.filter((entry) => (entry.category || "").toLowerCase() === categoryFilter.toLowerCase());
+      filteredSuppliers = filteredSuppliers.filter((entry) =>
+        (entry.categoryId || "").toLowerCase() === categoryFilter.toLowerCase(),
+      );
     }
 
     if (regionFilter) {
-      filteredSuppliers = filteredSuppliers.filter((entry) => (entry.region || "").toLowerCase() === regionFilter.toLowerCase());
+      filteredSuppliers = filteredSuppliers.filter((entry) =>
+        (entry.regionId || "").toLowerCase() === regionFilter.toLowerCase(),
+      );
     }
 
     if (searchFilter) {
@@ -82,9 +170,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const invalidCount = suppliers.filter((supplier) => supplier.missingFields?.length).length;
     const validCount = totalSuppliers - invalidCount;
 
-    const categories = Array.from(new Set(suppliers.map((s) => s.category).filter(Boolean))) as string[];
-    const regions = Array.from(new Set(suppliers.map((s) => s.region || s.location).filter(Boolean))) as string[];
-
     console.log("📊 Validation report refreshed", {
       filters: { valid: rawValid, category: categoryFilter, region: regionFilter, search: searchFilter },
       count: filteredSuppliers.length,
@@ -93,11 +178,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const csvData = filteredSuppliers.map((entry) => ({
       name: entry.name,
       slug: entry.slug,
-      category: entry.category || "",
+      category: entry.categoryLabel || entry.categoryId || "",
       address: entry.address || "",
       missingFields: entry.missingFields.join("; "),
       lastUpdated: entry.lastUpdated || "",
       verified: entry.verified ? "yes" : "no",
+      region: entry.regionLabel || entry.regionId || "",
     }));
 
     if (req.query.format === "csv") {
@@ -129,8 +215,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       invalidCount,
       validCount,
       filteredCount: filteredSuppliers.length,
-      categories,
-      regions,
+      categories: categoryOptions,
+      regions: regionOptions,
       filters: {
         valid: rawValid || "all",
         category: categoryFilter || "",

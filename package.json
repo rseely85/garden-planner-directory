@@ -11,7 +11,11 @@
     "verify": "node scripts/verifyFirestoreData.js",
     "reauth:full": "gcloud auth application-default login && node scripts/verifyFirestoreData.js",
     "stats": "npx tsx lib/getSupplierStats.ts",
-    "backfill:locations": "npx tsx scripts/backfillSupplierLocations.ts"
+    "backfill:locations": "npx tsx scripts/backfillSupplierLocations.ts",
+    "backfill:regions": "node scripts/backfillSupplierRegions.js",
+    "migrate:normalized": "npx tsx scripts/migrateNormalizedModel.ts",
+    "seed:reference": "npx tsx scripts/seedReferenceData.ts",
+    "cleanup:legacy": "node scripts/cleanupLegacyData.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",

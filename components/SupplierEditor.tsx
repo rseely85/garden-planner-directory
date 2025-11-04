@@ -4,7 +4,10 @@ type Supplier = {
   id: string;
   slug?: string;
   name: string;
-  category: string;
+  category?: string | null;
+  categories?: string[];
+  offerings?: string[];
+  products?: string[];
   verified: boolean;
   premium: boolean;
   address?: {
@@ -30,6 +33,11 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [masterLoading, setMasterLoading] = useState(false);
+  const [masterError, setMasterError] = useState<string | null>(null);
+  const [masterCategories, setMasterCategories] = useState<{ id: string; name: string }[]>([]);
+  const [masterOfferings, setMasterOfferings] = useState<{ id: string; name: string; categoryId: string }[]>([]);
+  const [masterProducts, setMasterProducts] = useState<{ id: string; name: string; offeringIds: string[] }[]>([]);
 
   // Fetch suppliers (all or filtered)
   const fetchSuppliers = async () => {
@@ -49,6 +57,29 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
     }
   };
 
+  const fetchMasterData = async () => {
+    setMasterLoading(true);
+    setMasterError(null);
+    try {
+      const response = await fetch("/api/admin/masterData");
+      if (!response.ok) {
+        throw new Error(`Failed to load master data (${response.status})`);
+      }
+      const data = await response.json();
+      if (!data?.success) {
+        throw new Error(data?.message || "Unknown master data error");
+      }
+      setMasterCategories(data.categories || []);
+      setMasterOfferings(data.offerings || []);
+      setMasterProducts(data.products || []);
+    } catch (error: any) {
+      console.error("Error fetching master data:", error);
+      setMasterError(error?.message || "Failed to load master data");
+    } finally {
+      setMasterLoading(false);
+    }
+  };
+
   // Refresh all data
   const refreshAll = async () => {
     await fetchSuppliers();
@@ -58,6 +89,7 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
   // Re-fetch when filters change
   useEffect(() => {
     fetchSuppliers();
+    fetchMasterData();
   }, [filterIds]);
 
   const handleEdit = (supplier: Supplier) => {
@@ -65,6 +97,9 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
     setEditedData({
       ...supplier,
       address: supplier.address ? { ...supplier.address } : undefined,
+      categories: supplier.categories ? [...supplier.categories] : supplier.category ? [supplier.category] : [],
+      offerings: supplier.offerings ? [...supplier.offerings] : [],
+      products: supplier.products ? [...supplier.products] : [],
     });
   };
 
@@ -92,6 +127,84 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
       }
       return { ...prev, address: nextAddress };
     });
+  };
+
+  const toggleMultiValue = (field: "categories" | "offerings" | "products", value: string) => {
+    setEditedData((prev) => {
+      if (!prev) return prev;
+      const current = Array.isArray(prev[field]) ? [...(prev[field] as string[])] : [];
+      const exists = current.includes(value);
+      const next = exists ? current.filter((item) => item !== value) : [...current, value];
+      return { ...prev, [field]: next };
+    });
+  };
+
+  const diffSets = (initial: string[] = [], next: string[] = []) => {
+    const initialSet = new Set(initial);
+    const nextSet = new Set(next);
+    const added = Array.from(nextSet).filter((value) => !initialSet.has(value));
+    const removed = Array.from(initialSet).filter((value) => !nextSet.has(value));
+    return { added, removed };
+  };
+
+  const syncAssociations = async (original: Supplier, updated: Supplier) => {
+    const supplierId = original.id;
+    const originalCategories = original.categories || (original.category ? [original.category] : []);
+    const updatedCategories = updated.categories || [];
+    const categoryDiff = diffSets(originalCategories, updatedCategories);
+
+    for (const categoryId of categoryDiff.added) {
+      await fetch("/api/admin/supplierCategories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, categoryId }),
+      });
+    }
+    for (const categoryId of categoryDiff.removed) {
+      await fetch("/api/admin/supplierCategories", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, categoryId }),
+      });
+    }
+
+    const originalOfferings = original.offerings || [];
+    const updatedOfferings = updated.offerings || [];
+    const offeringDiff = diffSets(originalOfferings, updatedOfferings);
+
+    for (const offeringId of offeringDiff.added) {
+      await fetch("/api/admin/supplierOfferings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, offeringId }),
+      });
+    }
+    for (const offeringId of offeringDiff.removed) {
+      await fetch("/api/admin/supplierOfferings", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, offeringId }),
+      });
+    }
+
+    const originalProducts = original.products || [];
+    const updatedProducts = updated.products || [];
+    const productDiff = diffSets(originalProducts, updatedProducts);
+
+    for (const productId of productDiff.added) {
+      await fetch("/api/admin/supplierProducts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, productId }),
+      });
+    }
+    for (const productId of productDiff.removed) {
+      await fetch("/api/admin/supplierProducts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, productId }),
+      });
+    }
   };
 
   const handleSave = async (fallbackId: string) => {
@@ -133,9 +246,12 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
         return addressPayload;
       })();
 
+    const primaryCategory = editedData.categories?.[0] ?? editedData.category ?? null;
+    const categoriesForSave = editedData.categories ?? (primaryCategory ? [primaryCategory] : []);
+    const offeringsForSave = editedData.offerings ?? [];
+    const productsForSave = editedData.products ?? [];
     const updates: Record<string, unknown> = {
       name: editedData.name,
-      category: editedData.category,
       verified: editedData.verified,
       premium: editedData.premium,
       address: payloadAddress,
@@ -152,22 +268,38 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
         throw new Error(result?.message || "Failed to update supplier");
       }
 
+      const updatedSnapshot: Supplier = {
+        ...editedData,
+        category: primaryCategory,
+        categories: categoriesForSave,
+        offerings: offeringsForSave,
+        products: productsForSave,
+      };
+
       setSuppliers((prev) =>
         prev.map((supplier) =>
           supplier.id === docKey || supplier.slug === docKey
             ? {
                 ...supplier,
-                name: editedData.name ?? supplier.name,
-                category: editedData.category ?? supplier.category,
-                verified: editedData.verified ?? supplier.verified,
-                premium: editedData.premium ?? supplier.premium,
+                name: updatedSnapshot.name ?? supplier.name,
+                category: updatedSnapshot.category ?? supplier.category,
+                categories: updatedSnapshot.categories ?? supplier.categories,
+                offerings: updatedSnapshot.offerings ?? supplier.offerings,
+                products: updatedSnapshot.products ?? supplier.products,
+                verified: updatedSnapshot.verified ?? supplier.verified,
+                premium: updatedSnapshot.premium ?? supplier.premium,
                 address: payloadAddress ? { ...supplier.address, ...payloadAddress } : supplier.address,
               }
             : supplier
         )
       );
 
-      console.log("💾 Updated supplier:", editedData.slug || editedData.id || docKey, "ZIP →", trimmedZip ?? "(cleared)");
+      await syncAssociations(
+        suppliers.find((s) => (s.id === docKey || s.slug === docKey)) ?? editedData,
+        updatedSnapshot,
+      );
+
+      console.log("💾 Updated supplier:", updatedSnapshot.slug || updatedSnapshot.id || docKey, "ZIP →", trimmedZip ?? "(cleared)");
       await refreshAll();
       if (hasMissingZipFilter && typeof onMissingZipResolved === "function") {
         onMissingZipResolved();
@@ -217,6 +349,8 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
       <h2 className="text-xl font-semibold mb-4">Supplier Editor</h2>
+      {masterLoading && <p className="text-sm text-gray-500 mb-2">Loading reference data…</p>}
+      {masterError && <p className="text-sm text-red-600 mb-2">{masterError}</p>}
       {message && (
         <div
           className={`mb-4 p-2 rounded ${
@@ -247,6 +381,8 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
               <tr>
                 <th className="py-2 px-3 border">Name</th>
                 <th className="py-2 px-3 border">Category</th>
+                <th className="py-2 px-3 border">Offerings</th>
+                <th className="py-2 px-3 border">Products</th>
                 <th className="py-2 px-3 border">Verified</th>
                 <th className="py-2 px-3 border">Premium</th>
                 <th className="py-2 px-3 border">City</th>
@@ -274,14 +410,94 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
                     </td>
                     <td className="border px-3 py-2">
                       {editingId === supplier.id ? (
-                        <input
-                          type="text"
-                          className="border p-1 w-full"
-                          value={editedData?.category ?? ""}
-                          onChange={(e) => handleFieldChange("category", e.target.value)}
-                        />
-                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {masterCategories.map((category) => {
+                            const isActive = editedData?.categories?.includes(category.id);
+                            return (
+                              <button
+                                key={category.id}
+                                type="button"
+                                aria-pressed={isActive}
+                                className={`px-2 py-1 rounded border text-xs ${
+                                  isActive
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-white text-gray-700 border-gray-300"
+                                }`}
+                                onClick={() => toggleMultiValue("categories", category.id)}
+                              >
+                                {category.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : supplier.categories && supplier.categories.length > 0 ? (
+                        supplier.categories
+                          .map((id) => masterCategories.find((c) => c.id === id)?.name || id)
+                          .join(", ")
+                      ) : supplier.category ? (
                         supplier.category
+                      ) : (
+                        <span className="text-gray-400 italic">None</span>
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pr-1">
+                          {masterOfferings.map((offering) => {
+                            const isActive = editedData?.offerings?.includes(offering.id);
+                            return (
+                              <button
+                                key={offering.id}
+                                type="button"
+                                aria-pressed={isActive}
+                                className={`px-2 py-1 rounded border text-xs ${
+                                  isActive
+                                    ? "bg-green-600 text-white border-green-600"
+                                    : "bg-white text-gray-700 border-gray-300"
+                                }`}
+                                onClick={() => toggleMultiValue("offerings", offering.id)}
+                              >
+                                {offering.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : supplier.offerings && supplier.offerings.length > 0 ? (
+                        supplier.offerings
+                          .map((id) => masterOfferings.find((o) => o.id === id)?.name || id)
+                          .join(", ")
+                      ) : (
+                        <span className="text-gray-400 italic">None</span>
+                      )}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {editingId === supplier.id ? (
+                        <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pr-1">
+                          {masterProducts.map((product) => {
+                            const isActive = editedData?.products?.includes(product.id);
+                            return (
+                              <button
+                                key={product.id}
+                                type="button"
+                                aria-pressed={isActive}
+                                className={`px-2 py-1 rounded border text-xs ${
+                                  isActive
+                                    ? "bg-purple-600 text-white border-purple-600"
+                                    : "bg-white text-gray-700 border-gray-300"
+                                }`}
+                                onClick={() => toggleMultiValue("products", product.id)}
+                              >
+                                {product.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : supplier.products && supplier.products.length > 0 ? (
+                        supplier.products
+                          .map((id) => masterProducts.find((p) => p.id === id)?.name || id)
+                          .join(", ")
+                      ) : (
+                        <span className="text-gray-400 italic">None</span>
                       )}
                     </td>
                     <td className="border px-3 py-2 text-center">

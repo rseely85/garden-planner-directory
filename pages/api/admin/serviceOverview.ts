@@ -1,43 +1,42 @@
-
-
-import { NextApiRequest, NextApiResponse } from "next";
-import { getFirebaseAdmin } from "../../../lib/firebaseAdmin";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { getAllSuppliersAdmin } from "@/lib/data/suppliers";
+import { getAllOfferings, getAllRegions } from "@/lib/data/masterData";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("📊 Fetching Service Overview data...");
   try {
-    const db = getFirebaseAdmin().firestore();
-    const snapshot = await db.collection("suppliers").get();
+    const [suppliers, offerings, regions] = await Promise.all([
+      getAllSuppliersAdmin(),
+      getAllOfferings(),
+      getAllRegions(),
+    ]);
 
-    if (snapshot.empty) {
-      console.warn("⚠️ No suppliers found in Firestore.");
-      return res.status(200).json({ services: [], regions: [] });
-    }
+    const offeringNameMap = new Map(offerings.map((offering) => [offering.id, offering.name]));
+    const regionNameMap = new Map(regions.map((region) => [region.id, region.name]));
 
     const servicesSet = new Set<string>();
     const regionsSet = new Set<string>();
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (Array.isArray(data.services)) {
-        data.services.forEach((s: string) => servicesSet.add(s.trim()));
-      } else if (typeof data.services === "string") {
-        servicesSet.add(data.services.trim());
-      }
+    suppliers.forEach((supplier) => {
+      (supplier.offerings || []).forEach((offeringId) => {
+        const name = offeringNameMap.get(offeringId) ?? offeringId;
+        servicesSet.add(name);
+      });
 
-      if (Array.isArray(data.regions)) {
-        data.regions.forEach((r: string) => regionsSet.add(r.trim()));
-      } else if (typeof data.regions === "string") {
-        regionsSet.add(data.regions.trim());
+      const regionId = supplier.address?.regionId;
+      if (regionId) {
+        const name = regionNameMap.get(regionId) ?? regionId;
+        regionsSet.add(name);
       }
     });
 
-    const services = Array.from(servicesSet).sort();
-    const regions = Array.from(regionsSet).sort();
+    const services = Array.from(servicesSet).sort((a, b) => a.localeCompare(b));
+    const regionList = Array.from(regionsSet).sort((a, b) => a.localeCompare(b));
 
-    res.status(200).json({ services, regions });
-  } catch (error) {
+    res.status(200).json({ services, regions: regionList });
+  } catch (error: any) {
     console.error("🔥 Error fetching service overview:", error);
     res.status(500).json({ error: "Failed to fetch service overview" });
   }
 }
+
