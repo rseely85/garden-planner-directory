@@ -6,6 +6,19 @@ import type {
   SupplierOfferingLink,
   SupplierProductLink,
 } from "@/lib/types";
+import { ensureSupplierAddress } from "@/lib/utils/ensureSupplierAddress";
+
+export async function getSupplierSummaries(): Promise<Array<{ id: string; name: string }>> {
+  const snapshot = await adminDb.collection("suppliers").get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() ?? {};
+    const rawName = typeof data.name === "string" && data.name.trim().length > 0 ? data.name : doc.id;
+    return {
+      id: doc.id,
+      name: rawName,
+    };
+  });
+}
 
 function serializeTimestamp(value: any): string | null {
   if (!value) return null;
@@ -21,35 +34,28 @@ function serializeTimestamp(value: any): string | null {
 }
 
 function buildSupplierRecord(doc: FirebaseFirestore.QueryDocumentSnapshot): SupplierRecord {
-  const data = doc.data() ?? {};
-  const address =
-    typeof data.address === "object" && data.address
-      ? {
-          street: data.address.street ?? undefined,
-          city: data.address.city ?? undefined,
-          county: data.address.county ?? undefined,
-          state: data.address.state ?? undefined,
-          zip: data.address.zip ? String(data.address.zip) : undefined,
-          regionId: data.address.regionId ?? data.regionId ?? null,
-        }
-      : undefined;
+  const normalizedData = ensureSupplierAddress<Record<string, unknown>>({
+    ...(doc.data() ?? {}),
+  });
+  const address = normalizedData.address;
+  console.log("DEBUG address check", doc.id, address);
 
   return {
     id: doc.id,
-    slug: data.slug || doc.id,
-    name: data.name || "(missing name)",
-    email: data.email || undefined,
-    phone: data.phone || undefined,
-    website: data.website || undefined,
-    logo: data.logo || undefined,
-    description: data.description || undefined,
-    location: data.location || undefined,
-    verified: typeof data.verified === "boolean" ? data.verified : undefined,
-    premium: typeof data.premium === "boolean" ? data.premium : undefined,
+    slug: normalizedData.slug || doc.id,
+    name: normalizedData.name || "(missing name)",
+    email: normalizedData.email || undefined,
+    phone: normalizedData.phone || undefined,
+    website: normalizedData.website || undefined,
+    logo: normalizedData.logo || undefined,
+    description: normalizedData.description || undefined,
+    location: normalizedData.location || undefined,
+    verified: typeof normalizedData.verified === "boolean" ? normalizedData.verified : undefined,
+    premium: typeof normalizedData.premium === "boolean" ? normalizedData.premium : undefined,
     address,
-    createdAt: serializeTimestamp(data.createdAt),
-    updatedAt: serializeTimestamp(data.updatedAt),
-    lastUpdated: data.lastUpdated || serializeTimestamp(data.updatedAt),
+    createdAt: serializeTimestamp(normalizedData.createdAt),
+    updatedAt: serializeTimestamp(normalizedData.updatedAt),
+    lastUpdated: normalizedData.lastUpdated || serializeTimestamp(normalizedData.updatedAt),
   };
 }
 

@@ -1,53 +1,30 @@
 // components/AdminDashboard.tsx
 import React, { useState, useEffect, useRef } from "react";
-import MaintenanceTools from "@/components/MaintenanceTools";
+import AdminMaintenancePanel from "@/components/AdminMaintenancePanel";
 import SupplierEditor from "@/components/SupplierEditor";
-import StatsSummary from "@/components/StatsSummary";
-import ServiceOverview from "@/components/ServiceOverview";
-import RegionOverview from "@/components/RegionOverview";
 import { fetchMissingZips } from "@/lib/adminApi";
-
-const COLLAPSIBLE_KEYS = {
-  statsSummary: "collapsible_statsSummary",
-  serviceOverview: "collapsible_serviceOverview",
-  regionOverview: "collapsible_regionOverview",
-  maintenanceTools: "collapsible_maintenanceTools",
-  supplierEditor: "collapsible_supplierEditor",
-};
 
 interface AdminDashboardProps {
   stats: any;
   onRefresh: () => void;
 }
 
-const Collapsible: React.FC<{ title: string; defaultOpen?: boolean; persistKey?: string }> = ({ title, defaultOpen = false, persistKey, children }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  useEffect(() => {
-    if (persistKey) {
-      const stored = localStorage.getItem(persistKey);
-      if (stored !== null) {
-        setTimeout(() => setIsOpen(stored === "true"), 0);
-      }
-    }
-  }, [persistKey]);
-
-  useEffect(() => {
-    if (persistKey) {
-      localStorage.setItem(persistKey, isOpen.toString());
-    }
-  }, [isOpen, persistKey]);
-
+const StatBadge: React.FC<{ label: string; value: number; tone: "green" | "yellow" | "purple" }> = ({
+  label,
+  value,
+  tone,
+}) => {
+  const containerTone =
+    tone === "green"
+      ? "bg-emerald-600"
+      : tone === "yellow"
+      ? "bg-amber-500"
+      : "bg-violet-600";
   return (
-    <div className="bg-white rounded shadow p-4 mb-6">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left flex justify-between items-center font-semibold text-lg mb-2 focus:outline-none"
-      >
-        {title}
-        <span className="ml-2">{isOpen ? "▲" : "▼"}</span>
-      </button>
-      {isOpen && <div>{children}</div>}
+    <div className={`flex items-center gap-2 rounded-full px-4 py-1 text-sm font-semibold text-white ${containerTone}`}>
+      <span className="h-2 w-2 rounded-full bg-white" />
+      <span>{label}</span>
+      <span className="ml-1 rounded bg-white/20 px-2 py-0.5 text-xs font-bold">{value}</span>
     </div>
   );
 };
@@ -55,10 +32,9 @@ const Collapsible: React.FC<{ title: string; defaultOpen?: boolean; persistKey?:
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => {
   const [loading, setLoading] = useState(false);
   const [statsData, setStats] = useState<any>(stats);
-  const [expandAll, setExpandAll] = useState<boolean | null>(null);
-  const [renderKey, setRenderKey] = useState(0);
   const supplierEditorRef = useRef<HTMLDivElement | null>(null);
   const [filterIds, setFilterIds] = useState<string[] | null>(null);
+  const [missingZipCount, setMissingZipCount] = useState<number>(stats?.missingZips ?? 0);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -88,43 +64,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
     fetchStats();
   }, []);
 
-  // Load expandAll state from localStorage on mount
   useEffect(() => {
-    const storedExpandAll = localStorage.getItem("collapsible_expandAll");
-    if (storedExpandAll !== null) {
-      setExpandAll(storedExpandAll === "true");
-      // Set all collapsibles to that state
-      Object.values(COLLAPSIBLE_KEYS).forEach((key) => {
-        localStorage.setItem(key, storedExpandAll);
-      });
-    }
+    const loadMissingZipCount = async () => {
+      try {
+        const result = await fetchMissingZips();
+        const ids = Array.isArray(result.ids)
+          ? result.ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+          : [];
+        setMissingZipCount(ids.length);
+      } catch (error) {
+        console.error("❌ Failed to load missing ZIP count:", error);
+      }
+    };
+    void loadMissingZipCount();
   }, []);
 
-  // Handler for Expand/Collapse All toggle
-  const handleExpandCollapseAll = () => {
-    const newState = !(expandAll === true);
-    setExpandAll(newState);
-    localStorage.setItem("collapsible_expandAll", newState.toString());
-    Object.values(COLLAPSIBLE_KEYS).forEach((key) => {
-      localStorage.setItem(key, newState.toString());
-    });
-    setRenderKey((prev) => prev + 1);
-  };
-
-  const handleCardClick = async (type: string, payloadIds?: string[]) => {
-    if (type !== "missingZips") {
-      setFilterIds(null);
-      return;
-    }
-
+  const applyMissingZipFilter = async () => {
     try {
-      let ids: string[] = Array.isArray(payloadIds) ? payloadIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0) : [];
-
-      if (ids.length === 0) {
-        const result = await fetchMissingZips();
-        ids = Array.isArray(result.ids) ? result.ids : [];
-      }
-
+      const result = await fetchMissingZips();
+      const ids = Array.isArray(result.ids)
+        ? result.ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        : [];
       console.log("🧩 Missing ZIP supplier IDs:", ids);
 
       if (ids.length === 0) {
@@ -137,10 +97,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
       console.log("🔄 Applying Missing ZIP filter in SupplierEditor...");
 
       setTimeout(() => {
-        localStorage.setItem(COLLAPSIBLE_KEYS.supplierEditor, "true");
-        setRenderKey((prev) => prev + 1);
         supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
+      setMissingZipCount(ids.length);
     } catch (error) {
       console.error("❌ Failed to load missing ZIPs:", error);
       alert("Failed to fetch missing ZIPs — check the API or Firestore connection.");
@@ -152,6 +111,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
       const result = await fetchMissingZips();
       const ids = Array.isArray(result.ids) ? result.ids : [];
       setFilterIds(ids);
+      setMissingZipCount(ids.length);
       if (ids.length === 0) {
         supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -176,50 +136,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, onRefresh }) => 
     );
   }
 
+  const totalSuppliers = statsData?.totalSuppliers ?? 0;
+  const verifiedCount = statsData?.verifiedCount ?? 0;
+  const premiumCount = statsData?.premiumCount ?? 0;
+  const unverifiedCount = statsData?.unverifiedCount ?? Math.max(totalSuppliers - verifiedCount, 0);
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <div className="mb-6 flex space-x-4">
-        <button
-          onClick={() => {
-            fetchStats();
-            setFilterIds(null);
-            supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Refresh
-        </button>
-        <button
-          onClick={handleExpandCollapseAll}
-          className="px-4 py-2 bg-gray-600 text-white rounded"
-          aria-pressed={expandAll === true}
-        >
-          {expandAll === true ? "Collapse All" : "Expand All"}
-        </button>
-      </div>
-      <Collapsible key={`statsSummary-${renderKey}`} title="📊 Stats Summary" defaultOpen persistKey={COLLAPSIBLE_KEYS.statsSummary}>
-        <StatsSummary stats={statsData} onCardClick={handleCardClick} />
-      </Collapsible>
-      <Collapsible key={`serviceOverview-${renderKey}`} title="🧭 Service Overview" persistKey={COLLAPSIBLE_KEYS.serviceOverview}>
-        <ServiceOverview stats={statsData} />
-      </Collapsible>
-      <Collapsible key={`regionOverview-${renderKey}`} title="🗺️ Region Overview" persistKey="collapsible_regionOverview">
-        <RegionOverview />
-      </Collapsible>
-      <Collapsible key={`maintenanceTools-${renderKey}`} title="🧰 Maintenance Tools" persistKey={COLLAPSIBLE_KEYS.maintenanceTools}>
-        <MaintenanceTools />
-      </Collapsible>
-      <div ref={supplierEditorRef}>
-        <Collapsible key={`supplierEditor-${renderKey}`} title="🧾 Supplier Editor" persistKey={COLLAPSIBLE_KEYS.supplierEditor}>
-          <SupplierEditor
-            key={filterIds?.join(",") || "all"}
-            filterIds={filterIds ?? undefined}
-            onMissingZipResolved={handleMissingZipResolved}
-            pageSize={5}
-          />
-        </Collapsible>
-      </div>
+    <div className="p-6 space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500">Monitor stats, maintain master data, and update suppliers.</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              fetchStats();
+              setFilterIds(null);
+              supplierEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              if (typeof onRefresh === "function") {
+                onRefresh();
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <section aria-label="Dashboard stats" className="rounded-lg border border-gray-200 bg-white p-4 shadow">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">Stat Summary</span>
+          <StatBadge label="Verified" value={verifiedCount} tone="green" />
+          <StatBadge label="Unverified" value={unverifiedCount} tone="yellow" />
+          <StatBadge label="Premium" value={premiumCount} tone="purple" />
+          <button
+            type="button"
+            onClick={applyMissingZipFilter}
+            className="ml-auto rounded border border-blue-500 px-3 py-1.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+          >
+            Missing ZIPs ({missingZipCount})
+          </button>
+        </div>
+      </section>
+
+      <section ref={supplierEditorRef} aria-label="Supplier editor" className="rounded-lg bg-white p-4 shadow">
+        <h2 className="mb-4 text-xl font-semibold text-gray-800">Supplier Editor</h2>
+        <SupplierEditor
+          key={filterIds?.join(",") || "all"}
+          filterIds={filterIds ?? undefined}
+          onMissingZipResolved={handleMissingZipResolved}
+          pageSize={5}
+        />
+      </section>
+
+      <section aria-label="Database maintenance" className="rounded-lg bg-white p-4 shadow">
+        <AdminMaintenancePanel />
+      </section>
     </div>
   );
 };
