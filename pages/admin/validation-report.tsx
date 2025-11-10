@@ -2,14 +2,19 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ValidationEntry } from "@/lib/types";
 
+interface OptionItem {
+  id: string;
+  label: string;
+}
+
 interface ValidationResponse {
   status: string;
   totalSuppliers: number;
   invalidCount: number;
   validCount: number;
   filteredCount: number;
-  categories: string[];
-  regions: string[];
+  categories: OptionItem[];
+  regions: OptionItem[];
   filters: {
     valid: string;
     category: string;
@@ -24,7 +29,7 @@ interface ValidationResponse {
 }
 
 type ValidityFilter = "all" | "valid" | "invalid";
-type SortKey = "name" | "slug" | "region" | "lastUpdated" | "category" | "address";
+type SortKey = "name" | "slug" | "regionLabel" | "lastUpdated" | "categoryLabel" | "address";
 
 const PAGE_SIZE = 10;
 
@@ -185,14 +190,14 @@ const ValidationReport: React.FC = () => {
               >
                 <option value="">All Categories</option>
                 {report?.categories?.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.id} value={category.id}>
+                    {category.label}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Address</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Region</label>
               <select
                 value={draftFilters.region}
                 onChange={(e) => setDraftFilters((prev) => ({ ...prev, region: e.target.value }))}
@@ -200,8 +205,8 @@ const ValidationReport: React.FC = () => {
               >
                 <option value="">All Addresses</option>
                 {report?.regions?.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
+                  <option key={region.id} value={region.id}>
+                    {region.label}
                   </option>
                 ))}
               </select>
@@ -279,18 +284,11 @@ const ValidationReport: React.FC = () => {
                     }
                     if (column === "category") {
                       return (
-                        <th key={column} className="px-4 py-2 cursor-pointer select-none" onClick={() => handleSort("category")}>
-                          Category {renderSortIndicator("category")}
+                        <th key={column} className="px-4 py-2 cursor-pointer select-none" onClick={() => handleSort("categoryLabel")}>
+                          Category {renderSortIndicator("categoryLabel")}
                         </th>
-                          );
-                        }
-                        if (column === "region") {
-                          return (
-                            <th key={column} className="px-4 py-2 cursor-pointer select-none" onClick={() => handleSort("region")}>
-                              Region {renderSortIndicator("region")}
-                            </th>
-                          );
-                        }
+                      );
+                    }
                         if (column === "lastUpdated") {
                           return (
                             <th key={column} className="px-4 py-2 cursor-pointer select-none" onClick={() => handleSort("lastUpdated")}>
@@ -323,12 +321,12 @@ const ValidationReport: React.FC = () => {
                             {entry.name || <span className="italic text-gray-400">Unknown</span>}
                           </td>
                           <td className="px-4 py-3 text-sm">{entry.slug}</td>
-                          <td className="px-4 py-3 text-sm">{entry.category || <span className="italic text-gray-400">N/A</span>}</td>
+                          <td className="px-4 py-3 text-sm">{entry.categoryLabel || entry.categoryId || <span className="italic text-gray-400">N/A</span>}</td>
                           <td className="px-4 py-3 text-sm">
                             {entry.missingFields.length ? entry.missingFields.join(", ") : "None"}
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            {entry.address || entry.region || <span className="italic text-gray-400">N/A</span>}
+                            {entry.address || entry.regionLabel || <span className="italic text-gray-400">N/A</span>}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             {entry.lastUpdated ? new Date(entry.lastUpdated).toLocaleString() : <span className="italic text-gray-400">N/A</span>}

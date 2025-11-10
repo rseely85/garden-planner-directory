@@ -127,4 +127,5 @@ Thumbs.db
 # --- Local environment ---
 .env*
 !.env.example
-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keys/
+keys/
+google-cloud-sdk

@@ -1,5 +1,6 @@
 import type { Supplier, Category } from "./types";
 import { getAllSuppliersAdmin } from "@/lib/data/suppliers";
+import { ensureSupplierAddress } from "@/lib/utils/ensureSupplierAddress";
 /**
  * Fetch all suppliers from Firestore.
  * Automatically detects whether running server-side or client-side.
@@ -8,12 +9,14 @@ export async function getSuppliers(): Promise<Supplier[]> {
   try {
     if (typeof window === "undefined") {
       const suppliers = await getAllSuppliersAdmin();
-      return suppliers as Supplier[];
+      return (suppliers as Supplier[]).map((supplier) => ensureSupplierAddress<Supplier>(supplier));
     }
 
     const response = await fetch("/api/suppliers");
     const json = await response.json();
-    const suppliers = (json?.suppliers ?? []) as Supplier[];
+    const suppliers = ((json?.suppliers ?? []) as Supplier[]).map((supplier) =>
+      ensureSupplierAddress<Supplier>(supplier),
+    );
     if (!suppliers.length) {
       console.warn("⚠️ No suppliers loaded — check Firestore data or authentication.");
     }

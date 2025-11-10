@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getAllCategories, getAllOfferings, getAllProducts, getAllRegions } from "@/lib/data/masterData";
+import { getSupplierSummaries } from "@/lib/data/suppliers";
 
 type ResponseData =
   | {
@@ -9,6 +10,7 @@ type ResponseData =
       offerings: any[];
       products: any[];
       regions: any[];
+      suppliers: Array<{ id: string; name: string }>;
     }
   | { success: false; message: string; error?: string };
 
@@ -18,11 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   try {
-    const [categories, offerings, products, regions] = await Promise.all([
+    const [categories, offerings, products, regions, suppliers] = await Promise.all([
       getAllCategories(),
       getAllOfferings(),
       getAllProducts(),
       getAllRegions(),
+      getSupplierSummaries(),
     ]);
 
     return res.status(200).json({
@@ -32,6 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       offerings,
       products,
       regions,
+      suppliers,
     });
   } catch (error: any) {
     console.error("🔥 masterData API error:", error);
@@ -42,4 +46,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 }
-

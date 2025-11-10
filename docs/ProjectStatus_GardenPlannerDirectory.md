@@ -1,6 +1,6 @@
 # Garden Planner Directory — Project Status & Forward Plan
 
-**Date:** 2025-10-25  
+**Date:** 2025-11-04  
 **Author:** Codex (development), with Robert Seely (QA/operations) & ChatGPT (PM)  
 
 ---
@@ -11,10 +11,10 @@
 - **Current Footprint:**  
   - Public directory home (`pages/index.tsx`) with canonical Admin-SDK supplier fetch (via `/api/suppliers`), server-side rendering, search, category filter, and sorting.  
   - Supplier detail pages render on the server to avoid bundling Firebase Admin into the client.  
-  - Dynamic admin suite (StatsSummary, ServiceOverview, RegionOverview, MaintenanceTools, SupplierEditor) with missing-ZIP filtering, pagination, and inline edits wired to `/api/admin/updateSupplier`.  
-  - Validation Report (`/admin/validation-report`) offering filterable/sortable audit data and filter-aware CSV download.  
-  - Firestore seeded with suppliers, products catalog, and 1,677 New York ZIPs/region metadata.  
-  - Scripts for seeding (`seedFirestore.js`, `seedNYRegions.ts`) and validation (`verifyFirestoreData.js`, `verifyRegions.ts`).  
+  - Dynamic admin suite (StatsSummary, ServiceOverview, RegionOverview, MaintenanceTools, SupplierEditor) now backed by normalized master data with reusable association APIs. Missing-ZIP filtering, bulk repair helpers, and inline edits run through `/api/admin/updateSupplier` + new `/api/admin/supplier*` endpoints.  
+  - Validation Report (`/admin/validation-report`) offers filterable/sortable audit data, friendly labels for categories/offerings/products, and filter-aware CSV exports.  
+  - Firestore normalized: suppliers reference master `categories/offerings/products/regions` via join tables; region IDs are auto-derived.  
+  - Scripts for seeding & maintenance (`seedFirestore.js`, `migrateNormalizedModel.ts`, `seedReferenceData.ts`, `backfillSupplierRegions.js`, `cleanupLegacyData.js`, `seedNYRegions.ts`, validation scripts).  
   - Modernized linting via ESLint v9 flat config and `npm run lint` enforcement.
 
 ---
@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | **Directory Basics** (filters, cards, SSR) | ✅ Complete | Home page pulls suppliers from Firestore, filters/sorts client-side, renders premium flagging. |
 | **Admin Analytics & Reporting** | ✅ Complete | Dashboard aggregates stats, service mix, regional coverage; CSV/JSON export endpoints exist. |
-| **Data Seeding & Maintenance** | ✅ Complete | Region ZIP set + supplier/product catalogs seeded; maintenance scripts verified. |
+| **Data Seeding & Maintenance** | ✅ Complete | Normalized seeding/migration scripts in place; region backfill & cleanup utilities verified. |
 | **Missing ZIP Detection & Repair** | ✅ Complete | `/api/admin/missingZips` + StatsSummary + SupplierEditor filter, pagination, scroll-to-editor focus, and inline ZIP save (via `/api/admin/updateSupplier`). |
 | **Validation Reporting** | ✅ Complete | Filterable `/admin/validation-report` + `/api/admin/validation` supports filters, sorting, and CSV exports. |
 | **Planner ↔ Directory Integration** | ⚪ Not Started | No mini-planner or sidebar matches on public site yet. |
@@ -41,7 +41,7 @@
 3. **Premium Monetization:** Stripe checkout endpoint and premium feature gating absent.  
 4. **Directory Depth:** Only a generic home page is live—city/category landing pages, map embeds, and content sections remain TODO.  
 5. **User-Generated Content:** Reviews, photos, and showcase galleries are still conceptual.  
-6. **Operational Automation:** Region auto-assignment and scheduled exports require polish for non-dev use (validation dashboard now production-ready).  
+6. **Operational Automation:** Region auto-assignment handled via backfill script; still evaluating scheduled exports and UI toggles for bulk repairs.  
 7. **QA & Deployment:** No staging/prod deploy workflow or automated tests yet; manual QA only.  
 
 ---
@@ -53,8 +53,8 @@ Each function is split into ~3-hour **Coding (C)** sessions handled by Codex and
 - ~~**C1:** Validation-report UI + CSV foundation~~ ✅  
 - ~~**T1:** Validation QA + Missing ZIP regression~~ ✅  
 - ~~**C2:** Validation report enhancements (filters, sorting, exports, navigation)~~ ✅  
-- **C3 (≈3h):** Automated data repair helpers (bulk email/location fixes, scripted cleanup flows).  
-- **T3 (≈3h):** QA automated repair routines and confirm dashboards reflect updated supplier data.
+- ~~**C3:** Firestore normalization & automated repair tooling~~ ✅  
+- **T3 (≈3h):** QA automated repair routines (bulk fixes + new admin endpoints) and document SOP for future imports.
 
 ### Priority P1 – Public Directory Experience
 - **C3 (≈3h):** Build `/directory/[city]/[category]` route with Firestore query filters, SEO meta, and SSR.  
@@ -102,9 +102,9 @@ Robert can schedule these blocks sequentially or mix/match based on availability
 ---
 
 ## 6. Immediate Next Actions
-1. **Codex:** Kick off Block C3 — design and implement automated supplier data repair scripts/tools.  
-2. **Robert:** Document high-priority data issues (e.g., missing emails/regions) and prepare validation steps for repaired records.  
-3. **ChatGPT:** Coordinate the next sprint plan with updated acceptance criteria for C3 and downstream blocks.
+1. **Codex:** Coordinate with Robert on T3 QA (bulk repair flows, SupplierEditor, validation report), then scope the next public-facing coding block (city/category routes).  
+2. **Robert:** Run regression pass on admin dashboard (report filters, region/service overviews, repair scripts) and capture follow-up tickets.  
+3. **ChatGPT:** Refresh sprint plan with C3 closed, align on C4/C5 priorities, and outline acceptance criteria for directory route work.
 
 ---
 

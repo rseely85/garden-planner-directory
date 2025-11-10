@@ -8,15 +8,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const db = getFirestore();
 
-    // Load valid NY ZIPs from regions/NY/zips
-    const regionDoc = db.collection("regions").doc("NY").collection("zips");
-    const zipsSnap = await regionDoc.get();
-    if (zipsSnap.empty) {
-      console.warn("⚠️ No region ZIP data found — returning empty result.");
+    // Build valid ZIP set from per-region `zipCodes` arrays
+    const regionSnapshot = await db.collection("regions").get();
+    const validZips = new Set<string>();
+    regionSnapshot.forEach((doc) => {
+      const data = doc.data() ?? {};
+      const zips = Array.isArray(data.zipCodes) ? data.zipCodes : [];
+      zips.forEach((zip) => {
+        const normalized = zip?.toString().trim().toUpperCase();
+        if (normalized) {
+          validZips.add(normalized);
+        }
+      });
+    });
+
+    if (validZips.size === 0) {
+      console.warn("⚠️ No region zipCodes data found — returning empty result.");
       return res.status(200).json({ ids: [], count: 0 });
     }
-
-    const validZips = new Set(zipsSnap.docs.map((d) => d.id.toString().trim().toUpperCase()));
 
     // Read all suppliers
     const supSnap = await db.collection("suppliers").get();
