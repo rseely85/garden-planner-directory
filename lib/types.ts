@@ -6,6 +6,8 @@ export interface SupplierAddress {
   state?: string;
   zip?: string;
   regionId?: string | null;
+  postalCode?: string;
+  [key: string]: string | null | undefined;
 }
 
 export interface SupplierRecord {

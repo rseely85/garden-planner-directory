@@ -1,16 +1,16 @@
 import type { SupplierAddress } from "@/lib/types";
 
-type SupplierLike = Record<string, any> & { address?: Record<string, unknown> | null };
+type SupplierLike = Record<string, any> & { address?: SupplierAddress | null };
 
-const normalizeAddressMapKeys = (address: Record<string, unknown>): Record<string, unknown> => {
-  const normalized: Record<string, unknown> = {};
+const normalizeAddressMapKeys = (address: SupplierAddress): Record<string, string> => {
+  const normalized: Record<string, string> = {};
   Object.entries(address).forEach(([key, value]) => {
     if (typeof key === "string" && key.includes(".")) {
       const segments = key.split(".");
       const last = segments[segments.length - 1];
-      normalized[last] = value;
+      normalized[last] = String(value ?? "");
     } else {
-      normalized[key] = value;
+      normalized[key] = String(value ?? "");
     }
   });
   return normalized;
@@ -66,14 +66,14 @@ const pickAddressValue = (source: SupplierLike, paths: string[]): string | undef
   return undefined;
 };
 
-export const ensureSupplierAddress = <T extends SupplierLike>(supplier: T): T & { address?: SupplierAddress } => {
+export const ensureSupplierAddress = <T extends SupplierLike>(supplier: T): T & { address?: SupplierAddress | null } => {
   if (!supplier || typeof supplier !== "object") {
     return supplier as T & { address?: SupplierAddress };
   }
 
   const baseAddress =
     typeof supplier.address === "object" && supplier.address !== null
-      ? normalizeAddressMapKeys(supplier.address as Record<string, unknown>)
+      ? normalizeAddressMapKeys(supplier.address as SupplierAddress)
       : undefined;
 
   const source: SupplierLike = baseAddress ? { ...supplier, address: baseAddress } : supplier;
@@ -99,13 +99,13 @@ export const ensureSupplierAddress = <T extends SupplierLike>(supplier: T): T & 
     return existingAddress ? { ...supplier, address: existingAddress } : supplier;
   }
 
-  const existing = baseAddress ? (baseAddress as SupplierAddress) : {};
+  const existing: SupplierAddress = baseAddress ? (baseAddress as SupplierAddress) : {};
 
   return {
-    ...supplier,
+    ...(supplier as Record<string, unknown>),
     address: {
       ...existing,
       ...updates,
     },
-  };
+  } as T & { address?: SupplierAddress | null | undefined };
 };

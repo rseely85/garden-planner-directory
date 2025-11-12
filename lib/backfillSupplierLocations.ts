@@ -37,7 +37,13 @@ export async function backfillSupplierLocations() {
 
     if (snapshot.empty) {
       console.warn("⚠️ No suppliers found in Firestore.");
-      return { updated: 0, skipped: 0, message: "No suppliers found." };
+      return {
+        success: true,
+        message: "No suppliers found.",
+        updatedCount: 0,
+        skippedCount: 0,
+        updates: [],
+      };
     }
 
     let updated = 0;

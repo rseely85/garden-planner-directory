@@ -7,6 +7,13 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
     (supplier as any)?.logo ||
     "https://placehold.co/300x200?text=No+Image";
 
+  const categories = Array.isArray(supplier?.categories)
+    ? supplier.categories
+    : supplier?.category
+    ? [supplier.category]
+    : [];
+  const services = Array.isArray(supplier?.services) ? supplier.services : [];
+  const products = Array.isArray(supplier?.products) ? supplier.products : [];
   const website = supplier?.website || "Website N/A";
   const verified = supplier?.verified;
   const premium = supplier?.premium;
@@ -51,18 +58,18 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
         </div>
 
         <p className="text-gray-700 text-sm">
-          <strong>Category:</strong> {supplier.category || "N/A"}
+          <strong>Categories:</strong> {categories.length > 0 ? categories.join(", ") : "N/A"}
         </p>
 
-        {supplier.services?.length > 0 && (
+        {services.length > 0 && (
           <p className="text-gray-600 text-sm">
-            <strong>Services:</strong> {supplier.services.join(", ")}
+            <strong>Services:</strong> {services.join(", ")}
           </p>
         )}
 
-        {supplier.products?.length > 0 && (
+        {products.length > 0 && (
           <p className="text-gray-600 text-sm">
-            <strong>Products:</strong> {supplier.products.join(", ")}
+            <strong>Products:</strong> {products.join(", ")}
           </p>
         )}
 

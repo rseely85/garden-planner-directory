@@ -39,7 +39,7 @@ reviews[], photos[], createdAt, updatedAt}
 reviews {id, supplierId, userId, rating, text, createdAt, status}
 cities {id, name, state, counties[], geoBounds}
 productsCatalog {id, label, tags[], synonyms[]}
-plans {id, userId, regionId, selections[], updatedAt}
+ plans {id, userId, regionId, selections[], updatedAt}
 5. API Endpoints (future Node/Express option)
 GET /api/suppliers?city&category;&products;&services;
 GET /api/suppliers/:slug
@@ -79,3 +79,21 @@ ReviewList, ReviewForm
 - Supplier profile: contact info, reviews, map, planner integration
 - SEO: server-rendered landing pages with schema markup
 - Security: only admins/owners can edit suppliers; users own plans only
+
+---
+
+## 11. 2025-11-12 Implementation Snapshot
+
+To keep the requirements in sync with the living codebase, here is the current feature alignment:
+
+- **Stack Reality:** Next.js 14 + TypeScript + Tailwind on the frontend, backed by Firebase Admin for all server-side data access. ESLint v9 flat config enforces linting via `npm run lint`.  
+- **Directory UX:** Home page lists suppliers, supports search, category filtering, and sorting (name asc/desc, category, premium bias). Supplier cards now surface *all* category tags instead of the legacy single `category` string.  
+- **Supplier Detail Page:** `/supplier/[slug]` is SSR, uses the same normalized category/services/products arrays, and gracefully handles missing data.  
+- **Admin Tooling:**  
+  - Supplier Editor fetches master categories/offerings/products/regions and now allows layered filtering without locking out dependent dropdowns.  
+  - Associations (categories/offerings/products) are synced through dedicated `/api/admin/supplier*` endpoints; ZIP normalization and address validation run before saving.  
+  - Backfill utilities (e.g., `backfillSupplierLocations`) now return consistent result shapes so admin APIs can surface updates directly in the UI.  
+- **Data Hygiene:** Incoming supplier data passes through `ensureSupplierAddress`, and TypeScript helpers coerce Firestore values into the expected shapes (strings, arrays, timestamps).  
+- **Next Milestones:** capture created/updated timestamps on supplier creation, derive the `location` string automatically, persist `geo` coordinates, and augment the Supplier Maintenance modal with a geocode lookup button before extending Planner integration.
+
+This section should be updated alongside each release so the original requirements stay actionable.

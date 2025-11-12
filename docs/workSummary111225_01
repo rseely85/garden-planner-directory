@@ -1,0 +1,7 @@
+## Work Summary — 2025-11-12
+
+- Restored Supplier Editor stability: normalized ID handling for new suppliers, enforced typed saves for categories/offerings/products, and allowed category/offering/product filters to combine without disabling dependent dropdowns.  
+- Updated SupplierCard and supplier detail pages to display the full category list and guard against missing products/services; the public directory now mirrors Firestore associations exactly.  
+- Hardened admin APIs with TypeScript typings, consistent error handling, and cleaned update payloads; `/api/admin/backfill` responses are now uniform.  
+- Documented the current implementation snapshot and refreshed the project plan (technical requirements + project status).  
+- Coordinated next priorities (supplier creation metadata + geocode lookup) and kept `npm run lint` / `npx tsc --noEmit` passing after every change.

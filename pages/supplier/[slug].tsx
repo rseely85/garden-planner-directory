@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import type { GetServerSideProps } from "next";
 import ReviewList from "../../components/ReviewList";
 import ReviewForm from "../../components/ReviewForm";
 import { getSupplierBySlug } from "../../lib/firestore";
@@ -20,6 +21,14 @@ export default function SupplierPage({ supplier }: SupplierPageProps) {
       </div>
     );
   }
+
+  const categories = Array.isArray(supplier.categories)
+    ? supplier.categories
+    : supplier.category
+    ? [supplier.category]
+    : [];
+  const services = Array.isArray(supplier.services) ? supplier.services : [];
+  const products = Array.isArray(supplier.products) ? supplier.products : [];
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -59,18 +68,18 @@ export default function SupplierPage({ supplier }: SupplierPageProps) {
           </div>
 
           <p className="text-gray-700 mb-2">
-            <strong>Category:</strong> {supplier.category || "N/A"}
+            <strong>Categories:</strong> {categories.length > 0 ? categories.join(", ") : "N/A"}
           </p>
 
-          {supplier.services?.length > 0 && (
+          {services.length > 0 && (
             <p className="text-gray-700 mb-2">
-              <strong>Services:</strong> {supplier.services.join(", ")}
+              <strong>Services:</strong> {services.join(", ")}
             </p>
           )}
 
-          {supplier.products?.length > 0 && (
+          {products.length > 0 && (
             <p className="text-gray-700 mb-2">
-              <strong>Products:</strong> {supplier.products.join(", ")}
+              <strong>Products:</strong> {products.join(", ")}
             </p>
           )}
 
@@ -108,12 +117,13 @@ export default function SupplierPage({ supplier }: SupplierPageProps) {
   );
 }
 
-export async function getServerSideProps({ params }) {
-  const supplier = params?.slug ? await getSupplierBySlug(params.slug as string) : null;
+export const getServerSideProps: GetServerSideProps<SupplierPageProps> = async ({ params }) => {
+  const slug = typeof params?.slug === "string" ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : undefined;
+  const supplier = slug ? await getSupplierBySlug(slug) : null;
 
   return {
     props: {
       supplier: supplier ? JSON.parse(JSON.stringify(supplier)) : null,
     },
   };
-}
+};

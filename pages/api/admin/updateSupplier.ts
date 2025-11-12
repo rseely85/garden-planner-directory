@@ -1,8 +1,9 @@
+import type { NextApiRequest, NextApiResponse } from "next";
 import { db } from "@/lib/firebaseAdmin";
 
 console.log("🛠 updateSupplier API route triggered");
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, message: "Method not allowed" });
   }
@@ -20,9 +21,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, message: "Firestore not initialized" });
     }
 
-    // Clean undefined or null fields
+    // Clean out only undefined fields; allow null so callers can clear values explicitly
     const cleanedUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined && v !== null)
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
     );
 
     console.log("🧹 Cleaned update fields:", cleanedUpdates);
@@ -43,12 +44,14 @@ export default async function handler(req, res) {
       message: `Supplier ${id} updated successfully`,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const stack = error instanceof Error ? error.stack : undefined;
     console.error("🔥 Error in updateSupplier API:", error);
     return res.status(500).json({
       success: false,
       message: "Error updating supplier",
-      error: error.message,
-      stack: error.stack,
+      error: message,
+      stack,
     });
   }
 }

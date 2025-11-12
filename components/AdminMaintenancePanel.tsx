@@ -706,6 +706,19 @@ const AdminMaintenancePanel: React.FC = () => {
     }
   };
 
+  const normalizeAssociationValues = (values?: string[]): string[] => {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    return Array.from(
+      new Set(
+        values
+          .map((value) => (typeof value === "string" ? value.trim() : ""))
+          .filter((value) => value.length > 0),
+      ),
+    );
+  };
+
   const handleSubmit = async (payload?: any) => {
     if (!modal.open || !activeConfig) return;
 
@@ -781,6 +794,16 @@ const AdminMaintenancePanel: React.FC = () => {
             updates[key] = value;
           }
         });
+
+        if (desiredSupplierAssociations) {
+          const normalizedCategories = normalizeAssociationValues(desiredSupplierAssociations.categories);
+          const normalizedOfferings = normalizeAssociationValues(desiredSupplierAssociations.offerings);
+          const normalizedProducts = normalizeAssociationValues(desiredSupplierAssociations.products);
+          updates.category = normalizedCategories[0] ?? null;
+          updates.categories = normalizedCategories;
+          updates.offerings = normalizedOfferings;
+          updates.products = normalizedProducts;
+        }
 
         const response = await fetch("/api/admin/updateSupplier", {
           method: "POST",
@@ -1415,9 +1438,14 @@ const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
 
       const supplierRecords = collectionItems.filter((item) => item.supplierId === supplierId);
       supplierRecords.forEach((record) => {
-        const day = record.dayOfWeek || record["day"] || "";
-        const openTime = record.openTime || "";
-        const closeTime = record.closeTime || "";
+        const day: string =
+          (typeof record.dayOfWeek === "string" && record.dayOfWeek.length > 0
+            ? record.dayOfWeek
+            : typeof record["day"] === "string"
+            ? (record["day"] as string)
+            : "") || "";
+        const openTime: string = typeof record.openTime === "string" ? record.openTime : "";
+        const closeTime: string = typeof record.closeTime === "string" ? record.closeTime : "";
         if ((openTime === "24/7" && closeTime === "24/7") || day === "All") {
           allDay = true;
         } else if (base[day]) {
@@ -1428,7 +1456,7 @@ const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
             hadExisting: true,
           };
         }
-        if (record.notes && !note) {
+        if (!note && typeof record.notes === "string" && record.notes.length > 0) {
           note = record.notes;
         }
       });

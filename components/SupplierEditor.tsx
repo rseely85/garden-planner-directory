@@ -50,6 +50,44 @@ const normalizeZip = (value: string | number | undefined | null): string => {
   return cleaned.length > 5 ? cleaned.slice(0, 5) : cleaned;
 };
 
+const extractIdValue = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (value && typeof value === "object") {
+    const candidate =
+      typeof (value as { id?: unknown }).id === "string"
+        ? (value as { id: string }).id
+        : typeof (value as { value?: unknown }).value === "string"
+        ? (value as { value: string }).value
+        : null;
+    if (candidate) {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  }
+  return null;
+};
+
+const normalizeIdList = (input?: unknown): string[] => {
+  if (input === undefined || input === null) {
+    return [];
+  }
+  const list = Array.isArray(input) ? input : [input];
+  const seen = new Set<string>();
+  list.forEach((value) => {
+    const id = extractIdValue(value);
+    if (id) {
+      seen.add(id);
+    }
+  });
+  return Array.from(seen);
+};
+
 interface SupplierEditorProps {
   filterIds?: string[];
   onMissingZipResolved?: () => void;
@@ -135,7 +173,23 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
       if (data.success) {
         const normalized =
           Array.isArray(data.suppliers) && data.suppliers.length > 0
-            ? (data.suppliers as Supplier[]).map((supplier) => ensureSupplierAddress<Supplier>(supplier))
+            ? (data.suppliers as Supplier[]).map((supplier) => {
+                const withAddress = ensureSupplierAddress<Supplier>(supplier);
+                const normalizedCategories =
+                  withAddress.categories && withAddress.categories.length > 0
+                    ? normalizeIdList(withAddress.categories)
+                    : normalizeIdList(withAddress.category ? [withAddress.category] : []);
+                const normalizedOfferings = normalizeIdList(withAddress.offerings);
+                const normalizedProducts = normalizeIdList(withAddress.products);
+                const normalizedCategory = normalizedCategories[0] ?? extractIdValue(withAddress.category) ?? null;
+                return {
+                  ...withAddress,
+                  category: normalizedCategory,
+                  categories: normalizedCategories,
+                  offerings: normalizedOfferings,
+                  products: normalizedProducts,
+                };
+              })
             : [];
         setSuppliers(normalized);
       } else {
@@ -186,12 +240,18 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
 
   const handleEdit = (supplier: Supplier) => {
     setEditingId(supplier.id);
+    const editableCategories =
+      supplier.categories && supplier.categories.length > 0
+        ? supplier.categories
+        : supplier.category
+        ? [supplier.category]
+        : [];
     setEditedData({
       ...supplier,
       address: supplier.address ? { ...supplier.address } : undefined,
-      categories: supplier.categories ? [...supplier.categories] : supplier.category ? [supplier.category] : [],
-      offerings: supplier.offerings ? [...supplier.offerings] : [],
-      products: supplier.products ? [...supplier.products] : [],
+      categories: normalizeIdList(editableCategories),
+      offerings: normalizeIdList(supplier.offerings),
+      products: normalizeIdList(supplier.products),
     });
   };
 
@@ -274,8 +334,10 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
 
   const syncAssociations = async (original: Supplier, updated: Supplier) => {
     const supplierId = original.id;
-    const originalCategories = original.categories || (original.category ? [original.category] : []);
-    const updatedCategories = updated.categories || [];
+    const originalCategories = normalizeIdList(
+      Array.isArray(original.categories) ? original.categories : original.category ? [original.category] : [],
+    );
+    const updatedCategories = normalizeIdList(updated.categories);
     const categoryDiff = diffSets(originalCategories, updatedCategories);
 
     for (const categoryId of categoryDiff.added) {
@@ -293,8 +355,8 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
       });
     }
 
-    const originalOfferings = original.offerings || [];
-    const updatedOfferings = updated.offerings || [];
+    const originalOfferings = normalizeIdList(original.offerings);
+    const updatedOfferings = normalizeIdList(updated.offerings);
     const offeringDiff = diffSets(originalOfferings, updatedOfferings);
 
     for (const offeringId of offeringDiff.added) {
@@ -312,8 +374,8 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
       });
     }
 
-    const originalProducts = original.products || [];
-    const updatedProducts = updated.products || [];
+    const originalProducts = normalizeIdList(original.products);
+    const updatedProducts = normalizeIdList(updated.products);
     const productDiff = diffSets(originalProducts, updatedProducts);
 
     for (const productId of productDiff.added) {
@@ -338,12 +400,13 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
       return;
     }
 
-    const docKey = editedData.slug ?? editedData.id ?? fallbackId;
-    if (!docKey) {
+    const documentId = editedData.id ?? fallbackId ?? null;
+    if (!documentId) {
       console.error("❌ No valid docRef for supplier", editedData);
       setMessage({ type: "error", text: "Unable to resolve supplier record." });
       return;
     }
+    const docKey = documentId;
 
     const rawZip = editedData.address?.zip ?? null;
     const normalizedZip = normalizeZip(rawZip);
@@ -377,15 +440,21 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
         return addressPayload;
       })();
 
-    const primaryCategory = editedData.categories?.[0] ?? editedData.category ?? null;
-    const categoriesForSave = editedData.categories ?? (primaryCategory ? [primaryCategory] : []);
-    const offeringsForSave = editedData.offerings ?? [];
-    const productsForSave = editedData.products ?? [];
+    const categoriesForSave = normalizeIdList(
+      Array.isArray(editedData.categories) ? editedData.categories : editedData.category ? [editedData.category] : [],
+    );
+    const primaryCategory = categoriesForSave[0] ?? null;
+    const offeringsForSave = normalizeIdList(editedData.offerings);
+    const productsForSave = normalizeIdList(editedData.products);
     const updates: Record<string, unknown> = {
       name: editedData.name,
       verified: editedData.verified,
       premium: editedData.premium,
       address: payloadAddress,
+      category: primaryCategory ?? null,
+      categories: categoriesForSave,
+      offerings: offeringsForSave,
+      products: productsForSave,
     };
 
     try {
@@ -545,6 +614,11 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
   const totalPages = Math.max(1, Math.ceil(filteredSuppliers.length / pageSize));
   const pageStart = (currentPage - 1) * pageSize;
   const paginatedSuppliers = filteredSuppliers.slice(pageStart, pageStart + pageSize);
+  // If filtering leaves no options (due to incomplete metadata), fall back to the master lists
+  const availableOfferings =
+    filteredOfferings.length > 0 ? filteredOfferings : masterOfferings;
+  const availableProducts =
+    filteredProducts.length > 0 ? filteredProducts : masterProducts;
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -579,10 +653,10 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
               className="rounded border border-gray-300 bg-white px-2 py-1 text-sm"
               value={pendingFilters.offeringId}
               onChange={(e) => handleOfferingSelect(e.target.value)}
-              disabled={filteredOfferings.length === 0}
+              disabled={availableOfferings.length === 0}
             >
               <option value="">All Offerings</option>
-              {filteredOfferings.map((offering) => (
+              {availableOfferings.map((offering) => (
                 <option key={offering.id} value={offering.id}>
                   {offering.name}
                 </option>
@@ -596,10 +670,10 @@ const SupplierEditor: React.FC<SupplierEditorProps> = ({ filterIds, onMissingZip
               className="rounded border border-gray-300 bg-white px-2 py-1 text-sm"
               value={pendingFilters.productId}
               onChange={(e) => updatePendingFilters("productId", e.target.value)}
-              disabled={filteredProducts.length === 0}
+              disabled={availableProducts.length === 0}
             >
               <option value="">All Products</option>
-              {filteredProducts.map((product) => (
+              {availableProducts.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
                 </option>

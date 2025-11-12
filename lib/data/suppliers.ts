@@ -8,6 +8,44 @@ import type {
 } from "@/lib/types";
 import { ensureSupplierAddress } from "@/lib/utils/ensureSupplierAddress";
 
+function extractIdValue(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (value && typeof value === "object") {
+    const candidate =
+      typeof (value as { id?: unknown }).id === "string"
+        ? (value as { id: string }).id
+        : typeof (value as { value?: unknown }).value === "string"
+        ? (value as { value: string }).value
+        : null;
+    if (candidate) {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  }
+  return null;
+}
+
+function sanitizeIdList(payload: unknown): string[] {
+  if (payload === undefined || payload === null) {
+    return [];
+  }
+  const list = Array.isArray(payload) ? payload : [payload];
+  const seen = new Set<string>();
+  list.forEach((entry) => {
+    const id = extractIdValue(entry);
+    if (id) {
+      seen.add(id);
+    }
+  });
+  return Array.from(seen);
+}
+
 export async function getSupplierSummaries(): Promise<Array<{ id: string; name: string }>> {
   const snapshot = await adminDb.collection("suppliers").get();
   return snapshot.docs.map((doc) => {
@@ -37,25 +75,39 @@ function buildSupplierRecord(doc: FirebaseFirestore.QueryDocumentSnapshot): Supp
   const normalizedData = ensureSupplierAddress<Record<string, unknown>>({
     ...(doc.data() ?? {}),
   });
-  const address = normalizedData.address;
+  const address = normalizedData.address ?? undefined;
   console.log("DEBUG address check", doc.id, address);
+
+  const toStringOrUndefined = (value: unknown): string | undefined => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    return String(value);
+  };
+
+  const toStringOrNull = (value: unknown): string | null => {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    return String(value);
+  };
 
   return {
     id: doc.id,
-    slug: normalizedData.slug || doc.id,
-    name: normalizedData.name || "(missing name)",
-    email: normalizedData.email || undefined,
-    phone: normalizedData.phone || undefined,
-    website: normalizedData.website || undefined,
-    logo: normalizedData.logo || undefined,
-    description: normalizedData.description || undefined,
-    location: normalizedData.location || undefined,
+    slug: toStringOrUndefined(normalizedData.slug) || doc.id,
+    name: toStringOrUndefined(normalizedData.name) || "(missing name)",
+    email: toStringOrUndefined(normalizedData.email),
+    phone: toStringOrUndefined(normalizedData.phone),
+    website: toStringOrUndefined(normalizedData.website),
+    logo: toStringOrUndefined(normalizedData.logo),
+    description: toStringOrUndefined(normalizedData.description),
+    location: toStringOrUndefined(normalizedData.location),
     verified: typeof normalizedData.verified === "boolean" ? normalizedData.verified : undefined,
     premium: typeof normalizedData.premium === "boolean" ? normalizedData.premium : undefined,
     address,
     createdAt: serializeTimestamp(normalizedData.createdAt),
     updatedAt: serializeTimestamp(normalizedData.updatedAt),
-    lastUpdated: normalizedData.lastUpdated || serializeTimestamp(normalizedData.updatedAt),
+    lastUpdated: toStringOrUndefined(normalizedData.lastUpdated) || serializeTimestamp(normalizedData.updatedAt),
   };
 }
 
@@ -104,20 +156,19 @@ export async function getAllSuppliersAdmin(): Promise<SupplierView[]> {
     const base = buildSupplierRecord(doc);
     const legacyData = doc.data() ?? {};
 
-    const categories =
-      categoryMap[doc.id]?.size
-        ? Array.from(categoryMap[doc.id])
-        : (legacyData.category ? [legacyData.category] : legacyData.categories) ?? [];
+    const categoriesSource = categoryMap[doc.id]?.size
+      ? Array.from(categoryMap[doc.id])
+      : legacyData.categories ?? (legacyData.category ? [legacyData.category] : []);
+    const offeringsSource = offeringMap[doc.id]?.size
+      ? Array.from(offeringMap[doc.id])
+      : legacyData.offerings ?? legacyData.services;
+    const productsSource = productMap[doc.id]?.size
+      ? Array.from(productMap[doc.id])
+      : legacyData.products;
 
-    const offerings =
-      offeringMap[doc.id]?.size
-        ? Array.from(offeringMap[doc.id])
-        : (legacyData.offerings as string[]) ?? (legacyData.services as string[]) ?? [];
-
-    const products =
-      productMap[doc.id]?.size
-        ? Array.from(productMap[doc.id])
-        : (legacyData.products as string[]) ?? [];
+    const categories = sanitizeIdList(categoriesSource);
+    const offerings = sanitizeIdList(offeringsSource);
+    const products = sanitizeIdList(productsSource);
 
     const primaryCategory = categories[0] ?? null;
     return {

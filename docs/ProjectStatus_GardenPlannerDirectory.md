@@ -1,6 +1,6 @@
 # Garden Planner Directory — Project Status & Forward Plan
 
-**Date:** 2025-11-04  
+**Date:** 2025-11-12  
 **Author:** Codex (development), with Robert Seely (QA/operations) & ChatGPT (PM)  
 
 ---
@@ -10,8 +10,8 @@
 - **Tech Stack:** Next.js (React, TypeScript, Tailwind), Firebase (Auth planned, Firestore, Storage), Google Cloud tooling (`gcloud`, `firebase-tools`), Stripe (planned), Google Maps (planned). State helpers include React Query, Zustand (reserved), and bespoke admin scripts.
 - **Current Footprint:**  
   - Public directory home (`pages/index.tsx`) with canonical Admin-SDK supplier fetch (via `/api/suppliers`), server-side rendering, search, category filter, and sorting.  
-  - Supplier detail pages render on the server to avoid bundling Firebase Admin into the client.  
-  - Dynamic admin suite (StatsSummary, ServiceOverview, RegionOverview, MaintenanceTools, SupplierEditor) now backed by normalized master data with reusable association APIs. Missing-ZIP filtering, bulk repair helpers, and inline edits run through `/api/admin/updateSupplier` + new `/api/admin/supplier*` endpoints.  
+  - Supplier detail pages render on the server to avoid bundling Firebase Admin into the client and now display the full category list/services/products in sync with SupplierCard.  
+  - Dynamic admin suite (StatsSummary, ServiceOverview, RegionOverview, MaintenanceTools, SupplierEditor) now backed by normalized master data with reusable association APIs. Missing-ZIP filtering, bulk repair helpers, inline edits, and the refreshed filter UX (category + offering/product cascading selectors) run through `/api/admin/updateSupplier` + `/api/admin/supplier*` endpoints.  
   - Validation Report (`/admin/validation-report`) offers filterable/sortable audit data, friendly labels for categories/offerings/products, and filter-aware CSV exports.  
   - Firestore normalized: suppliers reference master `categories/offerings/products/regions` via join tables; region IDs are auto-derived.  
   - Scripts for seeding & maintenance (`seedFirestore.js`, `migrateNormalizedModel.ts`, `seedReferenceData.ts`, `backfillSupplierRegions.js`, `cleanupLegacyData.js`, `seedNYRegions.ts`, validation scripts).  
@@ -22,7 +22,7 @@
 ## 2. Delivered Functionality (Code vs. Blueprint)
 | Blueprint Pillar | Implementation Status | Notes |
 | --- | --- | --- |
-| **Directory Basics** (filters, cards, SSR) | ✅ Complete | Home page pulls suppliers from Firestore, filters/sorts client-side, renders premium flagging. |
+| **Directory Basics** (filters, cards, SSR) | ✅ Complete | Home page pulls suppliers from Firestore, filters/sorts client-side, renders premium flagging, and surfaces multipletags. |
 | **Admin Analytics & Reporting** | ✅ Complete | Dashboard aggregates stats, service mix, regional coverage; CSV/JSON export endpoints exist. |
 | **Data Seeding & Maintenance** | ✅ Complete | Normalized seeding/migration scripts in place; region backfill & cleanup utilities verified. |
 | **Missing ZIP Detection & Repair** | ✅ Complete | `/api/admin/missingZips` + StatsSummary + SupplierEditor filter, pagination, scroll-to-editor focus, and inline ZIP save (via `/api/admin/updateSupplier`). |
@@ -42,7 +42,8 @@
 4. **Directory Depth:** Only a generic home page is live—city/category landing pages, map embeds, and content sections remain TODO.  
 5. **User-Generated Content:** Reviews, photos, and showcase galleries are still conceptual.  
 6. **Operational Automation:** Region auto-assignment handled via backfill script; still evaluating scheduled exports and UI toggles for bulk repairs.  
-7. **QA & Deployment:** No staging/prod deploy workflow or automated tests yet; manual QA only.  
+7. **Supplier Creation UX:** Maintenance modal currently creates only the visible fields. `createdAt`, `updatedAt`, derived `location`, and `geo` (lat/lng) need to be set automatically, along with an optional geocode lookup button to populate coordinates.  
+8. **QA & Deployment:** No staging/prod deploy workflow or automated tests yet; manual QA only.  
 
 ---
 
@@ -54,35 +55,37 @@ Each function is split into ~3-hour **Coding (C)** sessions handled by Codex and
 - ~~**T1:** Validation QA + Missing ZIP regression~~ ✅  
 - ~~**C2:** Validation report enhancements (filters, sorting, exports, navigation)~~ ✅  
 - ~~**C3:** Firestore normalization & automated repair tooling~~ ✅  
-- **T3 (≈3h):** QA automated repair routines (bulk fixes + new admin endpoints) and document SOP for future imports.
+- **T3 (≈3h):** QA automated repair routines (bulk fixes + new admin endpoints) and document SOP for future imports.  
+- **C4 (≈3h):** Supplier Maintenance modal should set created/updated timestamps, derive `location`, support optional lat/lng, and offer a “Lookup Coordinates” action that calls a geocode helper.  
+- **T4 (≈3h):** QA new supplier creation/edit flows to confirm the hidden fields populate as expected and the geocode lookup behaves.
 
 ### Priority P1 – Public Directory Experience
-- **C3 (≈3h):** Build `/directory/[city]/[category]` route with Firestore query filters, SEO meta, and SSR.  
-- **T3 (≈3h):** Robert cross-checks each landing page for accurate supplier subsets and lighthouse/SEO basics.
-- **C4 (≈3h):** Implement Supplier Profile page (`/supplier/[slug]`) with map placeholder, services/products badges, and CTA buttons.  
-- **T4 (≈3h):** QA profile content vs. Firestore, verify broken data falls back gracefully.
+- **C5 (≈3h):** Build `/directory/[city]/[category]` route with Firestore query filters, SEO meta, and SSR.  
+- **T5 (≈3h):** Robert cross-checks each landing page for accurate supplier subsets and lighthouse/SEO basics.
+- **C6 (≈3h):** Expand Supplier Profile page with map placeholder, richer CTAs, and gallery slots.  
+- **T6 (≈3h):** QA profile content vs. Firestore, verify broken data falls back gracefully.
 
 ### Priority P2 – Planner & Supplier Matching
-- **C5 (≈3h):** Create MiniPlannerEmbed mock component (product toggles) + PlannerSidebarMatches panel triggered on home/directory pages.  
-- **T5 (≈3h):** Robert runs scenario tests: select product sets → confirm suppliers returned, ensure no console errors.
-- **C6 (≈3h):** Wire planner selections to Firestore query (`array-contains-any`), add premium-first sorting, and empty-state copy.  
-- **T6 (≈3h):** QA across desktop/mobile, confirm premium records float to top and filters remain reactive.
+- **C7 (≈3h):** Create MiniPlannerEmbed mock component (product toggles) + PlannerSidebarMatches panel triggered on home/directory pages.  
+- **T7 (≈3h):** Robert runs scenario tests: select product sets → confirm suppliers returned, ensure no console errors.
+- **C8 (≈3h):** Wire planner selections to Firestore query (`array-contains-any`), add premium-first sorting, and empty-state copy.  
+- **T8 (≈3h):** QA across desktop/mobile, confirm premium records float to top and filters remain reactive.
 
 ### Priority P3 – Monetization & Supplier Self-Service
-- **C7 (≈3h):** Scaffold Firebase Auth (email/password + Google) with protected admin routes.  
-- **T7 (≈3h):** Robert smoke-tests login, ensures admin gating works, and notes UX friction.
-- **C8 (≈3h):** Implement Stripe Checkout API + premium flag propagation; update SupplierCard styling for premium tiers.  
-- **T8 (≈3h):** QA Stripe checkout in test mode, confirm premium listings render highlighted after webhook or manual flag.
-- **C9 (≈3h):** Add supplier self-claim flow (request form + approval queue) and basic review submission endpoint.  
-- **T9 (≈3h):** Robert validates claim submissions, review moderation list, and error messaging.
+- **C9 (≈3h):** Scaffold Firebase Auth (email/password + Google) with protected admin routes.  
+- **T9 (≈3h):** Robert smoke-tests login, ensures admin gating works, and notes UX friction.
+- **C10 (≈3h):** Implement Stripe Checkout API + premium flag propagation; update SupplierCard styling for premium tiers.  
+- **T10 (≈3h):** QA Stripe checkout in test mode, confirm premium listings render highlighted after webhook or manual flag.
+- **C11 (≈3h):** Add supplier self-claim flow (request form + approval queue) and basic review submission endpoint.  
+- **T11 (≈3h):** Robert validates claim submissions, review moderation list, and error messaging.
 
 ### Priority P4 – Content, SEO, and Deployment
-- **C10 (≈3h):** Compose first five SEO landing pages with structured data + CMS-friendly content blocks.  
-- **T10 (≈3h):** Run lighthouse/SEO audits, validate OpenGraph/Twitter meta, and share results.
-- **C11 (≈3h):** Configure Vercel deployment with environment secrets, GA4, and error logging (Sentry or LogRocket).  
-- **T11 (≈3h):** Robert exercises staging vs. production URLs, validates analytics events, and documents deployment SOP.
-- **C12 (≈3h):** Introduce automated tests (Playwright smoke + unit tests for helper utilities) and GitHub Actions lint/test pipeline.  
-- **T12 (≈3h):** QA reviews CI outputs, runs regression checklist, and signs off on go/no-go criteria.
+- **C12 (≈3h):** Compose first five SEO landing pages with structured data + CMS-friendly content blocks.  
+- **T12 (≈3h):** Run lighthouse/SEO audits, validate OpenGraph/Twitter meta, and share results.
+- **C13 (≈3h):** Configure Vercel deployment with environment secrets, GA4, and error logging (Sentry or LogRocket).  
+- **T13 (≈3h):** Robert exercises staging vs. production URLs, validates analytics events, and documents deployment SOP.
+- **C14 (≈3h):** Introduce automated tests (Playwright smoke + unit tests for helper utilities) and GitHub Actions lint/test pipeline.  
+- **T14 (≈3h):** QA reviews CI outputs, runs regression checklist, and signs off on go/no-go criteria.
 
 ---
 

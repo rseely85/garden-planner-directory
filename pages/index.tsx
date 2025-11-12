@@ -19,7 +19,9 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
 
   // Extract unique categories for dropdown
   const categories = useMemo(() => {
-    const allCategories = suppliers.map((s) => s.category).filter(Boolean);
+    const allCategories = suppliers
+      .map((s) => (typeof s.category === "string" ? s.category.trim() : ""))
+      .filter((value): value is string => value.length > 0);
     return Array.from(new Set(allCategories));
   }, [suppliers]);
 
@@ -46,7 +48,11 @@ export default function Home({ suppliers }: { suppliers: Supplier[] }) {
       case "name-desc":
         return list.sort((a, b) => b.name.localeCompare(a.name));
       case "category":
-        return list.sort((a, b) => a.category.localeCompare(b.category));
+        return list.sort((a, b) => {
+          const aCategory = typeof a.category === "string" ? a.category : "";
+          const bCategory = typeof b.category === "string" ? b.category : "";
+          return aCategory.localeCompare(bCategory);
+        });
       case "premium":
         return list.sort((a, b) => (b.premium ? 1 : 0) - (a.premium ? 1 : 0));
       default:
